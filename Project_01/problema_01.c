@@ -1,3 +1,9 @@
+/*
+Estrutura de Dados 1 - Turma A
+Murilo Loiola Dantas - 17/0163571
+Gabriel Alves Hussein - 17/0103200
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX 10
@@ -32,6 +38,5 @@ int fneuronio(double *vet1, double *vet2, double lim, int total){
   if(SOMAP>lim){
     return 1;
   }
-  else
     return 0;
 }
