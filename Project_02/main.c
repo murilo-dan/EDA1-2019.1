@@ -5,22 +5,43 @@
 
 int* randomize_vector(int *);
 char* get_training(int, char, char *);
+void get_pixels(FILE *, int **);
 
 int main(int argc, char** argv){
   srand(time(NULL));
-  char* training_data = malloc(35 * sizeof(int));
-  int* ASPHALT = malloc(50 * sizeof(int));
-  int* GRASS = malloc(50 *sizeof(int));
+  FILE *fp;
+  char* training_data = calloc(35, sizeof(int));
+  int* ASPHALT = calloc(50, sizeof(int));
+  int* GRASS = calloc(50, sizeof(int));
   randomize_vector(ASPHALT);
   randomize_vector(GRASS);
   for(int i = 0;i < 25;i++){
     get_training(*(ASPHALT+i), 'a', training_data);
-    printf("%s\n", training_data);
+    int** pixels = (int **)calloc(1025, sizeof(int *));
+    for(int a = 0;a < 1025;a++){
+      *(pixels+a) = (int *)calloc(1025, sizeof(int));
+    }
+    fp = fopen(training_data, "r");
+    get_pixels(fp, pixels);
+    for(int a = 0;a < 1025;a++){
+      free(pixels[a]);
+    }
+    free(pixels);
+    fclose(fp);
   }
-  printf("\n\n");
   for(int i = 0;i < 25;i++){
     get_training(*(GRASS+i), 'g', training_data);
-    printf("%s\n", training_data);
+    int** pixels = (int **)calloc(1025, sizeof(int *));
+    for(int a = 0;a < 1025;a++){
+      *(pixels+a) = (int *)calloc(1025, sizeof(int));
+    }
+    fp = fopen(training_data, "r");
+    get_pixels(fp, pixels);
+    for(int a = 0;a < 1025;a++){
+      free(pixels[a]);
+    }
+    free(pixels);
+    fclose(fp);
   }
   free(ASPHALT);
   free(GRASS);
@@ -43,16 +64,25 @@ int *randomize_vector(int *vetor){
 
 char *get_training(int index, char c, char *training_data){
   char number[3];
-  sprintf(number, "%d", index);
+  sprintf(number, "%02d", index);
   if(c == 'a'){
-    strcpy(training_data, "dataset/asphalt/asphalt_");
+    strcpy(training_data, "DataSet/asphalt/asphalt_");
   }
   else{
-    strcpy(training_data, "dataset/grass/grass_");
-  }
-  if(index < 10){
-    strcat(training_data, "0");
+    strcpy(training_data, "DataSet/grass/grass_");
   }
   strcat(training_data, number);
   strcat(training_data, ".txt");
+}
+
+void get_pixels(FILE *in, int **array){
+  int c;
+  for(int i = 0;i<1025;i++){
+    for(int j = 0;j<1025;j++){
+      fscanf(in, "%d", *(array+i)+j);
+      if((c=fgetc(in))!=';'){
+        ungetc(c,in);
+      }
+    }
+  }
 }
