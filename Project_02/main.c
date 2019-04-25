@@ -2,10 +2,12 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-int* randomize_vector(int *);
-char* get_training(int, char, char *);
+int *randomize_vector(int *);
+char *get_training(int, char, char *);
 void get_pixels(FILE *, int **);
+int *ilbp(int **);
 
 int main(int argc, char** argv){
   srand(time(NULL));
@@ -23,6 +25,7 @@ int main(int argc, char** argv){
     }
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
+    ilbp(pixels);
     for(int a = 0;a < 1025;a++){
       free(pixels[a]);
     }
@@ -37,6 +40,7 @@ int main(int argc, char** argv){
     }
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
+    ilbp(pixels);
     for(int a = 0;a < 1025;a++){
       free(pixels[a]);
     }
@@ -82,6 +86,50 @@ void get_pixels(FILE *in, int **array){
       fscanf(in, "%d", *(array+i)+j);
       if((c=fgetc(in))!=';'){
         ungetc(c,in);
+      }
+    }
+  }
+}
+
+int *ilbp(int **pixel){
+  float media = 0;
+  int min, total, temp;
+  int bit[9] = {0};
+  int vetor[9] = {0};
+  for(int i=1;i<1024;i++){
+    for(int j=1;j<1024;j++){
+      min = 512;
+      vetor[0] = *(*(pixel+(i-1))+(j-1));
+      vetor[1] = *(*(pixel+(i-1))+j);
+      vetor[2] = *(*(pixel+(i-1))+(j+1));
+      vetor[3] = *(*(pixel+i)+(j-1));
+      vetor[4] = *(*(pixel+i)+j);
+      vetor[5] = *(*(pixel+i)+(j+1));
+      vetor[6] = *(*(pixel+(i+1))+(j-1));
+      vetor[7] = *(*(pixel+(i+1))+j);
+      vetor[8] = *(*(pixel+(i+1))+(j+1));
+      media = (vetor[0]+vetor[1]+vetor[2]+vetor[3]+vetor[4]+vetor[5]+vetor[6]+vetor[7]+vetor[8])/9.0;
+      for(int a=0;a<9;a++){
+        if(vetor[a]>=media){
+          bit[a]=1;
+        }
+        else{
+          bit[a]=0;
+        }
+      }
+      for(int b=0;b<9;b++){
+        total = 0;
+        for(int a=8;a>=0;a--){
+          total += bit[a] * pow(2,(8-a));
+        }
+        if(total<=min){
+          min = total;
+        }
+        temp=bit[8];
+        for(int k=8;k>0;k--){
+          bit[k]=bit[k-1];
+        }
+        bit[0]=temp;
       }
     }
   }
