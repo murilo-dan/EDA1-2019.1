@@ -7,8 +7,8 @@
 int *randomize_vector(int *);
 char *get_training(int, char, char *);
 void get_pixels(FILE *, int **);
-int *ilbp(int **, float **, int);
-int *glcm(int **);
+float *ilbp(int **, float **, int);
+float *glcm(int **, float **, int);
 int *normalizando(float **, int);
 
 int main(int argc, char** argv){
@@ -18,7 +18,7 @@ int main(int argc, char** argv){
   int ASPHALT[50]={0};
   int GRASS[50]={0};
   float** ilbp_vectors = (float **)calloc(25, sizeof(float *));
-
+  float** glcm_vectors = (float **)calloc(25, sizeof(float *));
   randomize_vector(ASPHALT);
   randomize_vector(GRASS);
 
@@ -35,7 +35,9 @@ int main(int argc, char** argv){
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
     *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
+    *(glcm_vectors+i) = (float *)calloc(24, sizeof(float));
     ilbp(pixels, ilbp_vectors, i);
+    glcm(pixels, glcm_vectors, i);
     normalizando(ilbp_vectors, i);
 
     for(int a = 0;a < 1025;a++){
@@ -54,12 +56,9 @@ int main(int argc, char** argv){
   for(int i = 0; i < 512; i++){
     *(ilbp_asfalto+i) /= 25;
   }
-  for(int i = 0; i < 512; i++){
-    printf("%.5f:", *(ilbp_asfalto+i));
-  }
-  printf("\n");
   for(int a = 0;a < 25;a++){
     free(ilbp_vectors[a]);
+    free(glcm_vectors[a]);
   }
 
   //GRAMA
@@ -76,7 +75,9 @@ int main(int argc, char** argv){
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
     *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
+    *(glcm_vectors+i) = (float *)calloc(24, sizeof(float));
     ilbp(pixels, ilbp_vectors, i);
+    glcm(pixels, glcm_vectors, i);
     normalizando(ilbp_vectors, i);
 
     for(int a = 0;a < 1025;a++){
@@ -95,15 +96,13 @@ int main(int argc, char** argv){
   for(int i = 0; i < 512; i++){
     *(ilbp_grama+i) /= 25;
   }
-  for(int i = 0; i < 512; i++){
-    printf("%.5f:", *(ilbp_grama+i));
-  }
-  printf("\n");
   for(int a = 0;a < 25;a++){
     free(ilbp_vectors[a]);
+    free(glcm_vectors[a]);
   }
 
   free(ilbp_vectors);
+  free(glcm_vectors);
   free(ilbp_asfalto);
   free(ilbp_grama);
   return 0;
@@ -123,15 +122,15 @@ int *randomize_vector(int *vetor){
 }
 
 char *get_training(int index, char c, char *training_data){
-  char number[3];
-  sprintf(number, "%02d", index);
+  char pixelber[3];
+  sprintf(pixelber, "%02d", index);
   if(c == 'a'){
     strcpy(training_data, "DataSet/asphalt/asphalt_");
   }
   else{
     strcpy(training_data, "DataSet/grass/grass_");
   }
-  strcat(training_data, number);
+  strcat(training_data, pixelber);
   strcat(training_data, ".txt");
   return training_data;
 }
@@ -166,7 +165,7 @@ int *normalizando(float **ilbp_vec, int x){
   }
 }
 
-int *ilbp(int **pixel, float **ilbp_vec, int x){
+float *ilbp(int **pixel, float **ilbp_vec, int x){
   float media = 0;
   int min, total, temp;
   int bit[9] = {0};
@@ -211,151 +210,127 @@ int *ilbp(int **pixel, float **ilbp_vec, int x){
   }
 }
 
-int *glcm(int **num){
-  int aux, aux2;
+float *glcm(int **pixel, float **glcm_vec, int x){
   int vizinho_cima[256][256] = {0}, vizinho_cima_esquerda[256][256] = {0},
   vizinho_cima_direita[256][256] = {0};
   int vizinho_direita[256][256] = {0}, vizinho_esquerda[256][256] = {0};
   int vizinho_baixo[256][256] = {0}, vizinho_baixo_esquerda[256][256] = {0},
   vizinho_baixo_direita[256][256] = {0};
-  float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0}, final[24] = {0};
+  float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
+
   for(int i=1;i<1025;i++){
-    for(int j=0;j<1025;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i-1)));
-      vizinho_cima[aux][aux2]++;
+    for(int j=1;j<1025;j++){
+      vizinho_cima_esquerda[*(*(pixel+i)+j)][*(*(pixel+(i-1))+(j-1))]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
-      energia[0] += pow(vizinho_cima[i][j],2);
-      contraste[0] += ((pow(i-j,2))*vizinho_cima[i][j]);
-      homogeneidade[0] += (vizinho_cima[i][j]/(1+(abs(i-j))));
+      energia[0] += pow(vizinho_cima_esquerda[i][j],2);
+      contraste[0] += pow((i-j),2)*vizinho_cima_esquerda[i][j];
+      homogeneidade[0] += vizinho_cima_esquerda[i][j]/(1+(abs(i-j)));
     }
   }
+
   for(int i=1;i<1025;i++){
     for(int j=0;j<1024;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i-1))+(j+1));
-      vizinho_cima_direita[aux][aux2]++;
+      vizinho_cima[*(*(pixel+i)+j)][*(*(pixel+(i-1))+j)]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
-      energia[1] += pow(vizinho_cima_direita[i][j],2);
-      contraste[1] += ((pow(i-j,2))*vizinho_cima_direita[i][j]);
-      homogeneidade[1] += (vizinho_cima_direita[i][j]/(1+(abs(i-j))));
+      energia[1] += pow(vizinho_cima[i][j],2);
+      contraste[1] += pow((i-j),2)*vizinho_cima[i][j];
+      homogeneidade[1] += vizinho_cima[i][j]/(1+(abs(i-j)));
     }
   }
+
+  for(int i=1;i<1025;i++){
+    for(int j=0;j<1024;j++){
+      vizinho_cima_direita[*(*(pixel+i)+j)][*(*(pixel+(i-1))+(j+1))]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[2] += pow(vizinho_cima_direita[i][j],2);
+      contraste[2] += pow((i-j),2)*vizinho_cima_direita[i][j];
+      homogeneidade[2] += vizinho_cima_direita[i][j]/(1+(abs(i-j)));
+    }
+  }
+
+  for(int i=0;i<1025;i++){
+    for(int j=1;j<1025;j++){
+      vizinho_esquerda[*(*(pixel+i)+j)][*(*(pixel+i)+(j-1))]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[3] += pow(vizinho_esquerda[i][j],2);
+      contraste[3] += pow((i-j),2)*vizinho_esquerda[i][j];
+      homogeneidade[3] += vizinho_esquerda[i][j]/(1+(abs(i-j)));
+    }
+  }
+
   for(int i=0;i<1025;i++){
     for(int j=0;j<1024;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(j+1)));
-      vizinho_direita[aux][aux2]++;
+      vizinho_direita[*(*(pixel+i)+j)][*(*(pixel+i)+(j+1))]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
-      energia[2] += pow(vizinho_direita[i][j],2);
-      contraste[2] += ((pow(i-j,2))*vizinho_direita[i][j]);
-      homogeneidade[2] += (vizinho_direita[i][j]/(1+(abs(i-j))));
+      energia[4] += pow(vizinho_direita[i][j],2);
+      contraste[4] += pow((i-j),2)*vizinho_direita[i][j];
+      homogeneidade[4] += vizinho_direita[i][j]/(1+(abs(i-j)));
     }
   }
-  for(int i=0;i<1024;i++){
-    for(int j=0;j<1024;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i+1))+(j+1));
-      vizinho_baixo_direita[aux][aux2]++;
-    }
-  }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
-      energia[3] += pow(vizinho_baixo_direita[i][j],2);
-      contraste[3] += ((pow(i-j,2))*vizinho_baixo_direita[i][j]);
-      homogeneidade[3] += (vizinho_baixo_direita[i][j]/(1+(abs(i-j))));
-    }
-  }
-  for(int i=0;i<1024;i++){
-    for(int j=0;j<1025;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i+1)));
-      vizinho_baixo[aux][aux2]++;
-    }
-  }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
-      energia[4] += pow(vizinho_baixo[i][j],2);
-      contraste[4] += ((pow(i-j,2))*vizinho_baixo[i][j]);
-      homogeneidade[4] += (vizinho_baixo[i][j]/(1+(abs(i-j))));
-    }
-  }
+
   for(int i=0;i<1024;i++){
     for(int j=1;j<1025;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i+1)+(j-1)));
-      vizinho_baixo_esquerda[aux][aux2]++;
+      vizinho_baixo_esquerda[*(*(pixel+i)+j)][*(*(pixel+(i+1))+(j-1))]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
       energia[5] += pow(vizinho_baixo_esquerda[i][j],2);
-      contraste[5] += ((pow(i-j,2))*vizinho_baixo_esquerda[i][j]);
-      homogeneidade[5] += (vizinho_baixo_esquerda[i][j]/(1+(abs(i-j))));
+      contraste[5] += pow((i-j),2)*vizinho_baixo_esquerda[i][j];
+      homogeneidade[5] += vizinho_baixo_esquerda[i][j]/(1+(abs(i-j)));
     }
   }
-  for(int i=0;i<1025;i++){
-    for(int j=1;j<1025;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(j-1)));
-      vizinho_esquerda[aux][aux2]++;
+
+  for(int i=0;i<1024;i++){
+    for(int j=0;j<1025;j++){
+      vizinho_baixo[*(*(pixel+i)+j)][*(*(pixel+(i+1))+j)]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
-      energia[6] += pow(vizinho_esquerda[i][j],2);
-      contraste[6] += ((pow(i-j,2))*vizinho_esquerda[i][j]);
-      homogeneidade[6] += (vizinho_esquerda[i][j]/(1+(abs(i-j))));
+      energia[6] += pow(vizinho_baixo[i][j],2);
+      contraste[6] += pow((i-j),2)*vizinho_baixo[i][j];
+      homogeneidade[6] += vizinho_baixo[i][j]/(1+(abs(i-j)));
     }
   }
-  for(int i=1;i<1025;i++){
-    for(int j=1;j<1025;j++){
-      aux=0;
-      aux2=0;
-      aux = *(*(num));
-      aux2 = *(*(num+(i+1))+(j-1));
-      vizinho_cima_esquerda[aux][aux2]++;
+
+  for(int i=0;i<1024;i++){
+    for(int j=0;j<1024;j++){
+      vizinho_baixo_direita[*(*(pixel+i)+j)][*(*(pixel+(i+1))+(j+1))]++;
     }
   }
   for(int i=0;i<256;i++){
     for(int j=0;j<256;j++){
-      energia[7] += pow(vizinho_cima_esquerda[i][j],2);
-      contraste[7] += ((pow(i-j,2))*vizinho_cima_esquerda[i][j]);
-      homogeneidade[7] += (vizinho_cima_esquerda[i][j]/(1+(abs(i-j))));
+      energia[7] += pow(vizinho_baixo_direita[i][j],2);
+      contraste[7] += pow((i-j),2)*vizinho_baixo_direita[i][j];
+      homogeneidade[7] += vizinho_baixo_direita[i][j]/(1+(abs(i-j)));
     }
   }
+
   for(int i=0;i<24;i++){
     if(i%3==0){
-      final[i]=energia[i];
+      *(*(glcm_vec+x)+i)=energia[i/3];
     }
-    if(i%3==1){
-      final[i]=contraste[i];
+    else if(i%3==1){
+      *(*(glcm_vec+x)+i)=contraste[i/3];
     }
-    if(i%3==2){
-      final[i]=homogeneidade[i];
+    else if(i%3==2){
+      *(*(glcm_vec+x)+i)=homogeneidade[i/3];
     }
   }
 }
