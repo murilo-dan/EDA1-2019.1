@@ -7,49 +7,105 @@
 int *randomize_vector(int *);
 char *get_training(int, char, char *);
 void get_pixels(FILE *, int **);
-int *ilbp(int **);
+int *ilbp(int **, float **, int);
+int *glcm(int **);
+int *normalizando(float **, int);
 
 int main(int argc, char** argv){
   srand(time(NULL));
   FILE *fp;
-  char* training_data = calloc(35, sizeof(int));
-  int* ASPHALT = calloc(50, sizeof(int));
-  int* GRASS = calloc(50, sizeof(int));
+  char training_data[35];
+  int ASPHALT[50]={0};
+  int GRASS[50]={0};
+  float** ilbp_vectors = (float **)calloc(25, sizeof(float *));
+
   randomize_vector(ASPHALT);
   randomize_vector(GRASS);
+
+  //ASFALTO
   for(int i = 0;i < 25;i++){
-    get_training(*(ASPHALT+i), 'a', training_data);
+    get_training(ASPHALT[i], 'a', training_data);
     int** pixels = (int **)calloc(1025, sizeof(int *));
     for(int a = 0;a < 1025;a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
+
+    printf("%s\n", training_data);
+
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    ilbp(pixels);
+    *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
+    ilbp(pixels, ilbp_vectors, i);
+    normalizando(ilbp_vectors, i);
+
     for(int a = 0;a < 1025;a++){
       free(pixels[a]);
     }
     free(pixels);
     fclose(fp);
   }
+
+  float* ilbp_asfalto = calloc(512, sizeof(int));
+  for(int i = 0; i < 25; i++){
+    for(int j = 0; j < 512; j++){
+      *(ilbp_asfalto+j) += *(*(ilbp_vectors+i)+j);
+    }
+  }
+  for(int i = 0; i < 512; i++){
+    *(ilbp_asfalto+i) /= 25;
+  }
+  for(int i = 0; i < 512; i++){
+    printf("%.5f:", *(ilbp_asfalto+i));
+  }
+  printf("\n");
+  for(int a = 0;a < 25;a++){
+    free(ilbp_vectors[a]);
+  }
+
+  //GRAMA
   for(int i = 0;i < 25;i++){
     get_training(*(GRASS+i), 'g', training_data);
+
     int** pixels = (int **)calloc(1025, sizeof(int *));
     for(int a = 0;a < 1025;a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
+
+    printf("%s\n", training_data);
+
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    ilbp(pixels);
+    *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
+    ilbp(pixels, ilbp_vectors, i);
+    normalizando(ilbp_vectors, i);
+
     for(int a = 0;a < 1025;a++){
       free(pixels[a]);
     }
     free(pixels);
     fclose(fp);
   }
-  free(ASPHALT);
-  free(GRASS);
-  free(training_data);
+
+  float* ilbp_grama = calloc(512, sizeof(float));
+  for(int i = 0; i < 25; i++){
+    for(int j = 0; j < 512; j++){
+        *(ilbp_grama+j) += *(*(ilbp_vectors+i)+j);
+    }
+  }
+  for(int i = 0; i < 512; i++){
+    *(ilbp_grama+i) /= 25;
+  }
+  for(int i = 0; i < 512; i++){
+    printf("%.5f:", *(ilbp_grama+i));
+  }
+  printf("\n");
+  for(int a = 0;a < 25;a++){
+    free(ilbp_vectors[a]);
+  }
+
+  free(ilbp_vectors);
+  free(ilbp_asfalto);
+  free(ilbp_grama);
   return 0;
 }
 
@@ -77,6 +133,7 @@ char *get_training(int index, char c, char *training_data){
   }
   strcat(training_data, number);
   strcat(training_data, ".txt");
+  return training_data;
 }
 
 void get_pixels(FILE *in, int **array){
@@ -91,7 +148,25 @@ void get_pixels(FILE *in, int **array){
   }
 }
 
-int *ilbp(int **pixel){
+int *normalizando(float **ilbp_vec, int x){
+  int max=0;
+  int min=1046530;
+  for(int i = 0; i < 512; i++){
+    if(max < *(*(ilbp_vec+x)+i)){
+      max = *(*(ilbp_vec+x)+i);
+    }
+    if(min > *(*(ilbp_vec+x)+i) && *(*(ilbp_vec+x)+i) != 0){
+      min = *(*(ilbp_vec+x)+i);
+    }
+  }
+  for(int i = 0; i < 512; i++){
+    if(*(*(ilbp_vec+x)+i) != 0){
+      *(*(ilbp_vec+x)+i) = (*(*(ilbp_vec+x)+i) - min)/(max - min);
+    }
+  }
+}
+
+int *ilbp(int **pixel, float **ilbp_vec, int x){
   float media = 0;
   int min, total, temp;
   int bit[9] = {0};
@@ -131,6 +206,156 @@ int *ilbp(int **pixel){
         }
         bit[0]=temp;
       }
+      *(*(ilbp_vec+x)+min) += 1;
+    }
+  }
+}
+
+int *glcm(int **num){
+  int aux, aux2;
+  int vizinho_cima[256][256] = {0}, vizinho_cima_esquerda[256][256] = {0},
+  vizinho_cima_direita[256][256] = {0};
+  int vizinho_direita[256][256] = {0}, vizinho_esquerda[256][256] = {0};
+  int vizinho_baixo[256][256] = {0}, vizinho_baixo_esquerda[256][256] = {0},
+  vizinho_baixo_direita[256][256] = {0};
+  float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0}, final[24] = {0};
+  for(int i=1;i<1025;i++){
+    for(int j=0;j<1025;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i-1)));
+      vizinho_cima[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[0] += pow(vizinho_cima[i][j],2);
+      contraste[0] += ((pow(i-j,2))*vizinho_cima[i][j]);
+      homogeneidade[0] += (vizinho_cima[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=1;i<1025;i++){
+    for(int j=0;j<1024;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i-1))+(j+1));
+      vizinho_cima_direita[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[1] += pow(vizinho_cima_direita[i][j],2);
+      contraste[1] += ((pow(i-j,2))*vizinho_cima_direita[i][j]);
+      homogeneidade[1] += (vizinho_cima_direita[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<1025;i++){
+    for(int j=0;j<1024;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(j+1)));
+      vizinho_direita[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[2] += pow(vizinho_direita[i][j],2);
+      contraste[2] += ((pow(i-j,2))*vizinho_direita[i][j]);
+      homogeneidade[2] += (vizinho_direita[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<1024;i++){
+    for(int j=0;j<1024;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i+1))+(j+1));
+      vizinho_baixo_direita[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[3] += pow(vizinho_baixo_direita[i][j],2);
+      contraste[3] += ((pow(i-j,2))*vizinho_baixo_direita[i][j]);
+      homogeneidade[3] += (vizinho_baixo_direita[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<1024;i++){
+    for(int j=0;j<1025;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i+1)));
+      vizinho_baixo[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[4] += pow(vizinho_baixo[i][j],2);
+      contraste[4] += ((pow(i-j,2))*vizinho_baixo[i][j]);
+      homogeneidade[4] += (vizinho_baixo[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<1024;i++){
+    for(int j=1;j<1025;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i+1)+(j-1)));
+      vizinho_baixo_esquerda[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[5] += pow(vizinho_baixo_esquerda[i][j],2);
+      contraste[5] += ((pow(i-j,2))*vizinho_baixo_esquerda[i][j]);
+      homogeneidade[5] += (vizinho_baixo_esquerda[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<1025;i++){
+    for(int j=1;j<1025;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(j-1)));
+      vizinho_esquerda[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[6] += pow(vizinho_esquerda[i][j],2);
+      contraste[6] += ((pow(i-j,2))*vizinho_esquerda[i][j]);
+      homogeneidade[6] += (vizinho_esquerda[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=1;i<1025;i++){
+    for(int j=1;j<1025;j++){
+      aux=0;
+      aux2=0;
+      aux = *(*(num));
+      aux2 = *(*(num+(i+1))+(j-1));
+      vizinho_cima_esquerda[aux][aux2]++;
+    }
+  }
+  for(int i=0;i<256;i++){
+    for(int j=0;j<256;j++){
+      energia[7] += pow(vizinho_cima_esquerda[i][j],2);
+      contraste[7] += ((pow(i-j,2))*vizinho_cima_esquerda[i][j]);
+      homogeneidade[7] += (vizinho_cima_esquerda[i][j]/(1+(abs(i-j))));
+    }
+  }
+  for(int i=0;i<24;i++){
+    if(i%3==0){
+      final[i]=energia[i];
+    }
+    if(i%3==1){
+      final[i]=contraste[i];
+    }
+    if(i%3==2){
+      final[i]=homogeneidade[i];
     }
   }
 }
