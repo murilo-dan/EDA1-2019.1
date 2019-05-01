@@ -17,12 +17,13 @@ int main(int argc, char** argv){
   char training_data[35];
   int ASPHALT[50]={0};
   int GRASS[50]={0};
-  float** ilbp_vectors = (float **)calloc(25, sizeof(float *));
-  float** glcm_vectors = (float **)calloc(25, sizeof(float *));
+  float aceitacao=0, falsa_aceitacao=0, falsa_rejeicao=0;
+  float distance_grama = 0, distance_asfalto = 0;
+  float** vectors = (float **)calloc(25, sizeof(float *));
   randomize_vector(ASPHALT);
   randomize_vector(GRASS);
 
-  //ASFALTO
+  printf("TREINAMENTO ASFALTO\n");
   for(int i = 0;i < 25;i++){
     get_training(ASPHALT[i], 'a', training_data);
     int** pixels = (int **)calloc(1025, sizeof(int *));
@@ -34,34 +35,33 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
-    *(glcm_vectors+i) = (float *)calloc(24, sizeof(float));
-    ilbp(pixels, ilbp_vectors, i);
-    glcm(pixels, glcm_vectors, i);
-    normalizando(ilbp_vectors, i);
+    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    ilbp(pixels, vectors, i);
+    glcm(pixels, vectors, i);
+    normalizando(vectors, i);
 
     for(int a = 0;a < 1025;a++){
-      free(pixels[a]);
+      free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
   }
 
-  float* ilbp_asfalto = calloc(512, sizeof(int));
+  float* asfalto = calloc(536, sizeof(float));
   for(int i = 0; i < 25; i++){
-    for(int j = 0; j < 512; j++){
-      *(ilbp_asfalto+j) += *(*(ilbp_vectors+i)+j);
+    for(int j = 0; j < 536; j++){
+      *(asfalto+j) += *(*(vectors+i)+j);
     }
   }
-  for(int i = 0; i < 512; i++){
-    *(ilbp_asfalto+i) /= 25;
-  }
-  for(int a = 0;a < 25;a++){
-    free(ilbp_vectors[a]);
-    free(glcm_vectors[a]);
+  for(int i = 0; i < 536; i++){
+    *(asfalto+i) = *(asfalto+i)/25;
   }
 
-  //GRAMA
+  for(int a = 0;a < 25;a++){
+    free(*(vectors+a));
+  }
+
+  printf("TREINAMENTO GRAMA\n");
   for(int i = 0;i < 25;i++){
     get_training(*(GRASS+i), 'g', training_data);
 
@@ -74,37 +74,124 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(ilbp_vectors+i) = (float *)calloc(512, sizeof(float));
-    *(glcm_vectors+i) = (float *)calloc(24, sizeof(float));
-    ilbp(pixels, ilbp_vectors, i);
-    glcm(pixels, glcm_vectors, i);
-    normalizando(ilbp_vectors, i);
+    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    ilbp(pixels, vectors, i);
+    glcm(pixels, vectors, i);
+    normalizando(vectors, i);
 
     for(int a = 0;a < 1025;a++){
-      free(pixels[a]);
+      free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
   }
 
-  float* ilbp_grama = calloc(512, sizeof(float));
+  float* grama = calloc(536, sizeof(float));
   for(int i = 0; i < 25; i++){
-    for(int j = 0; j < 512; j++){
-        *(ilbp_grama+j) += *(*(ilbp_vectors+i)+j);
+    for(int j = 0; j < 536; j++){
+        *(grama+j) += *(*(vectors+i)+j);
     }
   }
-  for(int i = 0; i < 512; i++){
-    *(ilbp_grama+i) /= 25;
+  for(int i = 0; i < 536; i++){
+    *(grama+i) /= 25;
   }
   for(int a = 0;a < 25;a++){
-    free(ilbp_vectors[a]);
-    free(glcm_vectors[a]);
+    free(*(vectors+a));
   }
 
-  free(ilbp_vectors);
-  free(glcm_vectors);
-  free(ilbp_asfalto);
-  free(ilbp_grama);
+  printf("TESTE ASFALTO\n");
+  for(int i = 0;i < 25;i++){
+    distance_asfalto = 0;
+    distance_grama = 0;
+    get_training(*(ASPHALT+(i+25)), 'a', training_data);
+    int** pixels = (int **)calloc(1025, sizeof(int *));
+    for(int a = 0;a < 1025;a++){
+      *(pixels+a) = (int *)calloc(1025, sizeof(int));
+    }
+
+    printf("%s\n", training_data);
+
+    fp = fopen(training_data, "r");
+    get_pixels(fp, pixels);
+    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    ilbp(pixels, vectors, i);
+    glcm(pixels, vectors, i);
+    normalizando(vectors, i);
+
+    for(int a = 0;a < 1025;a++){
+      free(*(pixels+a));
+    }
+    free(pixels);
+    fclose(fp);
+
+    for(int a = 0; a < 536; a++){
+      distance_asfalto += pow((*(*(vectors+i)+a)+*(asfalto+a)), 2);
+      distance_grama += pow((*(*(vectors+i)+a)+*(grama+a)), 2);
+    }
+    distance_asfalto = sqrt(distance_asfalto);
+    distance_grama = sqrt(distance_grama);
+    if(distance_asfalto < distance_grama){
+      aceitacao++;
+    }
+    else if(distance_asfalto > distance_grama){
+      falsa_aceitacao++;
+    }
+  }
+
+  for(int a = 0;a < 25;a++){
+    free(*(vectors+a));
+  }
+
+  printf("TESTE GRAMA\n");
+  for(int i = 0;i < 25;i++){
+    distance_asfalto = 0;
+    distance_grama = 0;
+    get_training(*(GRASS+(i+25)), 'g', training_data);
+    int** pixels = (int **)calloc(1025, sizeof(int *));
+    for(int a = 0;a < 1025;a++){
+      *(pixels+a) = (int *)calloc(1025, sizeof(int));
+    }
+
+    printf("%s\n", training_data);
+
+    fp = fopen(training_data, "r");
+    get_pixels(fp, pixels);
+    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    ilbp(pixels, vectors, i);
+    glcm(pixels, vectors, i);
+    normalizando(vectors, i);
+
+    for(int a = 0;a < 1025;a++){
+      free(*(pixels+a));
+    }
+    free(pixels);
+    fclose(fp);
+
+    for(int a = 0; a < 536; a++){
+      distance_asfalto += pow((*(*(vectors+i)+a)+*(asfalto+a)), 2);
+      distance_grama += pow((*(*(vectors+i)+a)+*(grama+a)), 2);
+    }
+    distance_asfalto = sqrt(distance_asfalto);
+    distance_grama = sqrt(distance_grama);
+    if(distance_grama < distance_asfalto){
+      aceitacao++;
+    }
+    else if(distance_grama > distance_asfalto){
+      falsa_rejeicao++;
+    }
+  }
+
+  aceitacao *= 2.0;
+  falsa_rejeicao *= 2.0;
+  falsa_aceitacao *= 2.0;
+  printf("Aceitação: %.1f%%\nFalsa Aceitação: %.1f%%\nFala Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
+
+  for(int a = 0;a < 25;a++){
+    free(*(vectors+a));
+  }
+  free(vectors);
+  free(asfalto);
+  free(grama);
   return 0;
 }
 
@@ -149,19 +236,17 @@ void get_pixels(FILE *in, int **array){
 
 int *normalizando(float **ilbp_vec, int x){
   int max=0;
-  int min=1046530;
-  for(int i = 0; i < 512; i++){
+  int min=999999999;
+  for(int i = 0; i < 536; i++){
     if(max < *(*(ilbp_vec+x)+i)){
       max = *(*(ilbp_vec+x)+i);
     }
-    if(min > *(*(ilbp_vec+x)+i) && *(*(ilbp_vec+x)+i) != 0){
+    if(min > *(*(ilbp_vec+x)+i)){
       min = *(*(ilbp_vec+x)+i);
     }
   }
-  for(int i = 0; i < 512; i++){
-    if(*(*(ilbp_vec+x)+i) != 0){
+  for(int i = 0; i < 536; i++){
       *(*(ilbp_vec+x)+i) = (*(*(ilbp_vec+x)+i) - min)/(max - min);
-    }
   }
 }
 
@@ -184,7 +269,7 @@ float *ilbp(int **pixel, float **ilbp_vec, int x){
       vetor[8] = *(*(pixel+(i+1))+(j+1));
       media = (vetor[0]+vetor[1]+vetor[2]+vetor[3]+vetor[4]+vetor[5]+vetor[6]+vetor[7]+vetor[8])/9.0;
       for(int a=0;a<9;a++){
-        if(vetor[a]>=media){
+        if(vetor[a]>media){
           bit[a]=1;
         }
         else{
@@ -322,15 +407,15 @@ float *glcm(int **pixel, float **glcm_vec, int x){
     }
   }
 
-  for(int i=0;i<24;i++){
+  for(int i=512;i<536;i++){
     if(i%3==0){
-      *(*(glcm_vec+x)+i)=energia[i/3];
+      *(*(glcm_vec+x)+i)=energia[(i-512)/3];
     }
     else if(i%3==1){
-      *(*(glcm_vec+x)+i)=contraste[i/3];
+      *(*(glcm_vec+x)+i)=contraste[(i-512)/3];
     }
     else if(i%3==2){
-      *(*(glcm_vec+x)+i)=homogeneidade[i/3];
+      *(*(glcm_vec+x)+i)=homogeneidade[(i-512)/3];
     }
   }
 }
