@@ -269,8 +269,11 @@ float *ilbp(int **pixel, float **ilbp_vec, int x){
       vetor[8] = *(*(pixel+(i+1))+(j+1));
       media = (vetor[0]+vetor[1]+vetor[2]+vetor[3]+vetor[4]+vetor[5]+vetor[6]+vetor[7]+vetor[8])/9.0;
       for(int a=0;a<9;a++){
-        if(vetor[a]>media){
+        if(vetor[a]>=media){
           bit[a]=1;
+        }
+        else{
+          bit[a]=0;
         }
       }
       for(int b=0;b<9;b++){
@@ -403,6 +406,7 @@ float *glcm(int **pixel, float **glcm_vec, int x){
       homogeneidade[7] += vizinho_baixo_direita[i][j]/(1+(abs(i-j)));
     }
   }
+  
   for(int i=512;i<536;i++){
     if(i%3==0){
       *(*(glcm_vec+x)+i)=energia[(i-512)/3];
