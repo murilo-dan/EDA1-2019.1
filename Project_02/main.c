@@ -7,9 +7,9 @@
 int *randomize_vector(int *);
 char *get_training(int, char, char *);
 void get_pixels(FILE *, int **);
-float *ilbp(int **, float **, int);
-float *glcm(int **, float **, int);
-int *normalizando(float **, int);
+double *ilbp(int **, double **, int);
+double *glcm(int **, double **, int);
+int *normalizando(double **, int);
 
 int main(int argc, char** argv){
   srand(time(NULL));
@@ -17,9 +17,9 @@ int main(int argc, char** argv){
   char training_data[35];
   int ASPHALT[50]={0};
   int GRASS[50]={0};
-  float aceitacao=0, falsa_aceitacao=0, falsa_rejeicao=0;
-  float distance_grama = 0, distance_asfalto = 0;
-  float** vectors = (float **)calloc(25, sizeof(float *));
+  double aceitacao=0, falsa_aceitacao=0, falsa_rejeicao=0;
+  double distance_grama = 0, distance_asfalto = 0;
+  double** vectors = (double **)calloc(25, sizeof(double *));
   randomize_vector(ASPHALT);
   randomize_vector(GRASS);
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -47,7 +47,7 @@ int main(int argc, char** argv){
     fclose(fp);
   }
 
-  float* asfalto = calloc(536, sizeof(float));
+  double* asfalto = calloc(536, sizeof(double));
   for(int i = 0; i < 25; i++){
     for(int j = 0; j < 536; j++){
       *(asfalto+j) += *(*(vectors+i)+j);
@@ -74,7 +74,7 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -86,14 +86,14 @@ int main(int argc, char** argv){
     fclose(fp);
   }
 
-  float* grama = calloc(536, sizeof(float));
+  double* grama = calloc(536, sizeof(double));
   for(int i = 0; i < 25; i++){
     for(int j = 0; j < 536; j++){
         *(grama+j) += *(*(vectors+i)+j);
     }
   }
   for(int i = 0; i < 536; i++){
-    *(grama+i) /= 25;
+    *(grama+i) = *(grama+i) / 25;
   }
   for(int a = 0;a < 25;a++){
     free(*(vectors+a));
@@ -113,7 +113,7 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -156,7 +156,7 @@ int main(int argc, char** argv){
 
     fp = fopen(training_data, "r");
     get_pixels(fp, pixels);
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -184,7 +184,7 @@ int main(int argc, char** argv){
   aceitacao *= 2.0;
   falsa_rejeicao *= 2.0;
   falsa_aceitacao *= 2.0;
-  printf("Aceitação: %.1f%%\nFalsa Aceitação: %.1f%%\nFalsa Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
+  printf("Aceitação: %.1lf%%\nFalsa Aceitação: %.1lf%%\nFalsa Rejeição: %.1lf%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
 
   for(int a = 0;a < 25;a++){
     free(*(vectors+a));
@@ -234,9 +234,9 @@ void get_pixels(FILE *in, int **array){
   }
 }
 
-int *normalizando(float **ilbp_vec, int x){
-  int max=0;
-  int min=999999999;
+int *normalizando(double **ilbp_vec, int x){
+  double max=0.0;
+  double min=999999999.0;
   for(int i = 0; i < 536; i++){
     if(max < *(*(ilbp_vec+x)+i)){
       max = *(*(ilbp_vec+x)+i);
@@ -250,8 +250,8 @@ int *normalizando(float **ilbp_vec, int x){
   }
 }
 
-float *ilbp(int **pixel, float **ilbp_vec, int x){
-  float media = 0;
+double *ilbp(int **pixel, double **ilbp_vec, int x){
+  double media = 0;
   int min, total, temp;
   int bit[9] = {0};
   int vetor[9] = {0};
@@ -292,13 +292,13 @@ float *ilbp(int **pixel, float **ilbp_vec, int x){
   }
 }
 
-float *glcm(int **pixel, float **glcm_vec, int x){
+double *glcm(int **pixel, double **glcm_vec, int x){
   int vizinho_cima[256][256] = {0}, vizinho_cima_esquerda[256][256] = {0},
   vizinho_cima_direita[256][256] = {0};
   int vizinho_direita[256][256] = {0}, vizinho_esquerda[256][256] = {0};
   int vizinho_baixo[256][256] = {0}, vizinho_baixo_esquerda[256][256] = {0},
   vizinho_baixo_direita[256][256] = {0};
-  float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
+  double energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
 
   for(int i=1;i<1025;i++){
     for(int j=1;j<1025;j++){
@@ -402,6 +402,9 @@ float *glcm(int **pixel, float **glcm_vec, int x){
       contraste[7] += pow(fabs(i-j),2)*vizinho_baixo_direita[i][j];
       homogeneidade[7] += vizinho_baixo_direita[i][j]/(1+(abs(i-j)));
     }
+  }
+  for(int i=0;i<8;i++){
+    printf("%lf ; %lf\n%lf ; %lf\n%lf ; %lf\n",energia[i], energia[i]/(1024*1024), contraste[i], contraste[i]/(1024*1024), homogeneidade[i], homogeneidade[i]/(1024*1024) );
   }
   for(int i=512;i<536;i++){
     if(i%3==0){
