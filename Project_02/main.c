@@ -16,9 +16,9 @@ Gabriel Alves Hussein - 17/0103200
 void preenche_pixels(FILE *, int **);
 char *nome_arquivo(int, char, char *);
 int *shuffle(int *);
-int *normalizando(float **, int);
-float *ilbp(int **, float **, int);
-float *glcm(int **, float **, int);
+int *normalizando(double **, int);
+double *ilbp(int **, double **, int);
+double *glcm(int **, double **, int);
 
 //Início da função principal.
 int main(int argc, char** argv){
@@ -32,9 +32,9 @@ int main(int argc, char** argv){
   int i = 0, a = 0, j = 0;
   int ASPHALT[50] = {0};
   int GRASS[50] = {0};
-  float aceitacao = 0, falsa_aceitacao = 0, falsa_rejeicao = 0;
-  float distance_grama = 0, distance_asfalto = 0;
-  float** vectors = (float **)calloc(25, sizeof(float *));
+  double aceitacao = 0, falsa_aceitacao = 0, falsa_rejeicao = 0;
+  double distance_grama = 0, distance_asfalto = 0;
+  double** vectors = (double **)calloc(25, sizeof(double *));
 
   //O programa pode levar alguns minutos para terminar a execução.
   //Caso queira visualizar qual arquivo está sendo analisado no momento
@@ -67,7 +67,7 @@ int main(int argc, char** argv){
 
     //Declarando um vetor para a imagem selecionada a cada iteração.
     //As funções que seguem realizam o cálculo do ILBP, do GLCM e normalizam o vetor resultado.
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -82,7 +82,7 @@ int main(int argc, char** argv){
 
   //Declaração e preenchimento do vetor final de treinamento de asfalto
   // que será a média dos 25 vetores obtidos no laço anterior.
-  float* asfalto = calloc(536, sizeof(float));
+  double* asfalto = calloc(536, sizeof(double));
   for(i = 0; i < 25; i++){
     for(j = 0; j < 536; j++){
       *(asfalto+j) += *(*(vectors+i)+j);
@@ -114,7 +114,7 @@ int main(int argc, char** argv){
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
 
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -128,7 +128,7 @@ int main(int argc, char** argv){
 
   //Declaração e preenchimento do vetor final de treinamento de grama
   // que será a média dos 25 vetores obtidos no laço anterior.
-  float* grama = calloc(536, sizeof(float));
+  double* grama = calloc(536, sizeof(double));
   for(i = 0; i < 25; i++){
     for(j = 0; j < 536; j++){
         *(grama+j) += *(*(vectors+i)+j);
@@ -162,7 +162,7 @@ int main(int argc, char** argv){
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
 
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -215,7 +215,7 @@ int main(int argc, char** argv){
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
 
-    *(vectors+i) = (float *)calloc(536, sizeof(float));
+    *(vectors+i) = (double *)calloc(536, sizeof(double));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
@@ -250,7 +250,7 @@ int main(int argc, char** argv){
   falsa_aceitacao *= 2.0;
 
   //Saída padrão no terminal, apresentando as taxas de acerto, falsa aceitação e falsa rejeição.
-  printf("Acerto: %.1f%%\nFalsa Aceitação: %.1f%%\nFalsa Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
+  printf("Acerto: %.1lf%%\nFalsa Aceitação: %.1lf%%\nFalsa Rejeição: %.1lf%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
 
   //Liberando as últimas alocações feitas.
   for(a = 0; a < 25; a++){
@@ -305,7 +305,7 @@ void preenche_pixels(FILE *in, int **array){
 }
 
 //Função realiza a normalização do vetor recebido.
-int *normalizando(float **ilbp_vec, int x){
+int *normalizando(double **ilbp_vec, int x){
   int max=0;
   int min=999999999;
   for(int i = 0; i < 536; i++){
@@ -322,8 +322,8 @@ int *normalizando(float **ilbp_vec, int x){
 }
 
 //Função calcula o ILBP.
-float *ilbp(int **pixel, float **ilbp_vec, int x){
-  float media = 0;
+double *ilbp(int **pixel, double **ilbp_vec, int x){
+  double media = 0;
   int min, total, temp;
   int bit[9] = {0};
   int vetor[9] = {0};
@@ -368,14 +368,14 @@ float *ilbp(int **pixel, float **ilbp_vec, int x){
 }
 
 //Função calcula o GLCM.
-float *glcm(int **pixel, float **glcm_vec, int x){
+double *glcm(int **pixel, double **glcm_vec, int x){
   int i = 0, j = 0;
   int vizinho_cima[256][256] = {0}, vizinho_cima_esquerda[256][256] = {0},
   vizinho_cima_direita[256][256] = {0};
   int vizinho_direita[256][256] = {0}, vizinho_esquerda[256][256] = {0};
   int vizinho_baixo[256][256] = {0}, vizinho_baixo_esquerda[256][256] = {0},
   vizinho_baixo_direita[256][256] = {0};
-  float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
+  double energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
 
   for(i = 1; i < 1025; i++){
     for(j = 1; j < 1025; j++){
