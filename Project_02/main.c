@@ -1,135 +1,189 @@
+/*
+Estrutura de Dados 1 - Turma A/2019.1
+Murilo Loiola Dantas - 17/0163571
+Gabriel Alves Hussein - 17/0103200
+*/
+
+//Bibliotecas utilizadas.
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
-int *randomize_vector(int *);
-char *get_training(int, char, char *);
-void get_pixels(FILE *, int **);
+//Declaração do protótipo das funções utilizadas.
+void preenche_pixels(FILE *, int **);
+char *nome_arquivo(int, char, char *);
+int *shuffle(int *);
+int *normalizando(float **, int);
 float *ilbp(int **, float **, int);
 float *glcm(int **, float **, int);
-int *normalizando(float **, int);
 
+//Início da função principal.
 int main(int argc, char** argv){
+
+  //Função utilizada para que o resultado seja aleatório sempre que o programa for rodado.
   srand(time(NULL));
+
+  //Declaração de variáveis necessárias.
   FILE *fp;
   char training_data[35];
-  int ASPHALT[50]={0};
-  int GRASS[50]={0};
-  float aceitacao=0, falsa_aceitacao=0, falsa_rejeicao=0;
+  int i = 0, a = 0, j = 0;
+  int ASPHALT[50] = {0};
+  int GRASS[50] = {0};
+  float aceitacao = 0, falsa_aceitacao = 0, falsa_rejeicao = 0;
   float distance_grama = 0, distance_asfalto = 0;
   float** vectors = (float **)calloc(25, sizeof(float *));
-  randomize_vector(ASPHALT);
-  randomize_vector(GRASS);
 
-  printf("TREINAMENTO ASFALTO\n");
-  for(int i = 0;i < 25;i++){
-    get_training(ASPHALT[i], 'a', training_data);
+  //O programa pode levar alguns minutos para terminar a execução.
+  //Caso queira visualizar qual arquivo está sendo analisado no momento
+  // e em qual parte está o programa, mude a variável "debug" para "true".
+  bool debug = false;
+
+  //Randomizando os vetores.
+  shuffle(ASPHALT);
+  shuffle(GRASS);
+
+  if(debug)printf("==========TREINAMENTO ASFALTO==========\n");
+  //Aqui são realizados todos os cálculos necessários para o treinamento com as imagens de asfalto.
+  for(i = 0; i < 25; i++){
+
+    //Pegando o nome de um arquivo diferente a cada iteração.
+    nome_arquivo(ASPHALT[i], 'a', training_data);
+
+    //Declaração do vetor que será preenchido com todos os valores de pixels da imagem selecionada.
     int** pixels = (int **)calloc(1025, sizeof(int *));
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    printf("%s\n", training_data);
+    if(debug)printf("%s\n", training_data);
 
+    //Abrindo o arquivo .txt da imagem.
     fp = fopen(training_data, "r");
-    get_pixels(fp, pixels);
+    //Preenchendo o vetor pixels com os valores da imagem.
+    preenche_pixels(fp, pixels);
+
+    //Declarando um vetor para a imagem selecionada a cada iteração.
+    //As funções que seguem realizam o cálculo do ILBP, do GLCM e normalizam o vetor resultado.
     *(vectors+i) = (float *)calloc(536, sizeof(float));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
 
-    for(int a = 0;a < 1025;a++){
+    //Liberando o espaço ocupado pelo vetor pixels e fechando o arquivo.
+    for(a = 0; a < 1025; a++){
       free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
   }
 
+  //Declaração e preenchimento do vetor final de treinamento de asfalto
+  // que será a média dos 25 vetores obtidos no laço anterior.
   float* asfalto = calloc(536, sizeof(float));
-  for(int i = 0; i < 25; i++){
-    for(int j = 0; j < 536; j++){
+  for(i = 0; i < 25; i++){
+    for(j = 0; j < 536; j++){
       *(asfalto+j) += *(*(vectors+i)+j);
     }
   }
-  for(int i = 0; i < 536; i++){
+  for(i = 0; i < 536; i++){
     *(asfalto+i) = *(asfalto+i)/25;
   }
 
-  for(int a = 0;a < 25;a++){
+  //Liberando os 25 vetores de treinamento.
+  for(a = 0; a < 25; a++){
     free(*(vectors+a));
   }
 
-  printf("TREINAMENTO GRAMA\n");
-  for(int i = 0;i < 25;i++){
-    get_training(*(GRASS+i), 'g', training_data);
+  if(debug)printf("==========TREINAMENTO GRAMA==========\n");
+  //Aqui são realizados todos os cálculos necessários para o treinamento com as imagens de grama.
+  for(i = 0; i < 25; i++){
+    //O processo aqui será semelhante ao do treinamento com as imagens de asfalto,
+    //com a diferença das imagens e vetor resultante.
+    nome_arquivo(*(GRASS+i), 'g', training_data);
 
     int** pixels = (int **)calloc(1025, sizeof(int *));
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    printf("%s\n", training_data);
+    if(debug)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
-    get_pixels(fp, pixels);
+    preenche_pixels(fp, pixels);
+
     *(vectors+i) = (float *)calloc(536, sizeof(float));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
 
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
   }
 
+  //Declaração e preenchimento do vetor final de treinamento de grama
+  // que será a média dos 25 vetores obtidos no laço anterior.
   float* grama = calloc(536, sizeof(float));
-  for(int i = 0; i < 25; i++){
-    for(int j = 0; j < 536; j++){
+  for(i = 0; i < 25; i++){
+    for(j = 0; j < 536; j++){
         *(grama+j) += *(*(vectors+i)+j);
     }
   }
-  for(int i = 0; i < 536; i++){
+  for(i = 0; i < 536; i++){
     *(grama+i) /= 25;
   }
-  for(int a = 0;a < 25;a++){
+
+  for(a = 0; a < 25; a++){
     free(*(vectors+a));
   }
 
-  printf("TESTE ASFALTO\n");
-  for(int i = 0;i < 25;i++){
-    distance_asfalto = 0;
-    distance_grama = 0;
-    get_training(*(ASPHALT+(i+25)), 'a', training_data);
+  if(debug)printf("==========TESTE ASFALTO==========\n");
+  //Aqui são realizados todos os cálculos necessários para o teste com as imagens de asfalto.
+  for(i = 0; i < 25; i++){
+
+    //Zerando as variáveis de distância que são utilizadas para determinar qual é a imagem de teste.
+    distance_asfalto = 0, distance_grama = 0;
+
+    //Nas próximas linhas (até o fechamento do arquivo) o processo é igual ao treinamento.
+    nome_arquivo(*(ASPHALT+(i+25)), 'a', training_data);
+
     int** pixels = (int **)calloc(1025, sizeof(int *));
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    printf("%s\n", training_data);
+    if(debug)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
-    get_pixels(fp, pixels);
+    preenche_pixels(fp, pixels);
+
     *(vectors+i) = (float *)calloc(536, sizeof(float));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
 
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
 
-    for(int a = 0; a < 536; a++){
+    //Aqui é calculada a distância euclidiana entre os vetores finais de treinamento
+    // e o vetor final da imagem analisada no teste.
+    for(a = 0; a < 536; a++){
       distance_asfalto += pow((*(*(vectors+i)+a)-*(asfalto+a)), 2);
       distance_grama += pow((*(*(vectors+i)+a)-*(grama+a)), 2);
     }
     distance_asfalto = sqrt(distance_asfalto);
     distance_grama = sqrt(distance_grama);
+
+    //Comparando as distâncias, as variáveis correspondentes de acerto ou falsa aceitação
+    // serão incrementadas.
     if(distance_asfalto < distance_grama){
       aceitacao++;
     }
@@ -138,41 +192,50 @@ int main(int argc, char** argv){
     }
   }
 
-  for(int a = 0;a < 25;a++){
+  for(a = 0; a < 25; a++){
     free(*(vectors+a));
   }
 
-  printf("TESTE GRAMA\n");
-  for(int i = 0;i < 25;i++){
-    distance_asfalto = 0;
-    distance_grama = 0;
-    get_training(*(GRASS+(i+25)), 'g', training_data);
+  if(debug)printf("==========TESTE GRAMA==========\n");
+  //Aqui são realizados todos os cálculos necessários para o teste com as imagens de asfalto.
+  for(i = 0; i < 25; i++){
+    //O processo aqui será semelhante ao do teste com as imagens de asfalto,
+    //com a diferença das imagens e variáveis finais.
+    distance_asfalto = 0, distance_grama = 0;
+
+    nome_arquivo(*(GRASS+(i+25)), 'g', training_data);
+
     int** pixels = (int **)calloc(1025, sizeof(int *));
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    printf("%s\n", training_data);
+    if(debug)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
-    get_pixels(fp, pixels);
+    preenche_pixels(fp, pixels);
+
     *(vectors+i) = (float *)calloc(536, sizeof(float));
     ilbp(pixels, vectors, i);
     glcm(pixels, vectors, i);
     normalizando(vectors, i);
 
-    for(int a = 0;a < 1025;a++){
+    for(a = 0; a < 1025; a++){
       free(*(pixels+a));
     }
     free(pixels);
     fclose(fp);
 
-    for(int a = 0; a < 536; a++){
+    //Cálculo de distância euclidiana.
+    for(a = 0; a < 536; a++){
       distance_asfalto += pow((*(*(vectors+i)+a)-*(asfalto+a)), 2);
       distance_grama += pow((*(*(vectors+i)+a)-*(grama+a)), 2);
     }
     distance_asfalto = sqrt(distance_asfalto);
     distance_grama = sqrt(distance_grama);
+
+    //Comparando as distâncias, as variáveis correspondentes de acerto ou falsa rejeição
+    // serão incrementadas.
     if(distance_grama < distance_asfalto){
       aceitacao++;
     }
@@ -181,12 +244,16 @@ int main(int argc, char** argv){
     }
   }
 
+  //Multiplicando as variáveis finais por 2 para conseguir a porcentagem de cada uma.
   aceitacao *= 2.0;
   falsa_rejeicao *= 2.0;
   falsa_aceitacao *= 2.0;
+
+  //Saída padrão no terminal, apresentando as taxas de acerto, falsa aceitação e falsa rejeição.
   printf("Aceitação: %.1f%%\nFalsa Aceitação: %.1f%%\nFalsa Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
 
-  for(int a = 0;a < 25;a++){
+  //Liberando as últimas alocações feitas.
+  for(a = 0; a < 25; a++){
     free(*(vectors+a));
   }
   free(vectors);
@@ -195,7 +262,8 @@ int main(int argc, char** argv){
   return 0;
 }
 
-int *randomize_vector(int *vetor){
+//Função realiza o embaralhamento dos vetores para randomizar os arquivos lidos.
+int *shuffle(int *vetor){
   for(int i = 1;i <= 50;i++){
     vetor[i-1] = i;
   }
@@ -208,21 +276,23 @@ int *randomize_vector(int *vetor){
   return vetor;
 }
 
-char *get_training(int index, char c, char *training_data){
-  char pixelber[3];
-  sprintf(pixelber, "%02d", index);
+//Função utiliza os valores embaralhados para retornar o nome do arquivo a ser lido.
+char *nome_arquivo(int index, char c, char *training_data){
+  char number[3];
+  sprintf(number, "%02d", index);
   if(c == 'a'){
     strcpy(training_data, "DataSet/asphalt/asphalt_");
   }
   else{
     strcpy(training_data, "DataSet/grass/grass_");
   }
-  strcat(training_data, pixelber);
+  strcat(training_data, number);
   strcat(training_data, ".txt");
   return training_data;
 }
 
-void get_pixels(FILE *in, int **array){
+//Função preenche o vetor recebido com os valores de cada pixel da imagem (.txt) selecionada.
+void preenche_pixels(FILE *in, int **array){
   int c;
   for(int i = 0;i<1025;i++){
     for(int j = 0;j<1025;j++){
@@ -234,6 +304,7 @@ void get_pixels(FILE *in, int **array){
   }
 }
 
+//Função realiza a normalização do vetor recebido.
 int *normalizando(float **ilbp_vec, int x){
   int max=0;
   int min=999999999;
@@ -250,6 +321,7 @@ int *normalizando(float **ilbp_vec, int x){
   }
 }
 
+//Função calcula o ILBP.
 float *ilbp(int **pixel, float **ilbp_vec, int x){
   float media = 0;
   int min, total, temp;
@@ -295,7 +367,9 @@ float *ilbp(int **pixel, float **ilbp_vec, int x){
   }
 }
 
+//Função calcula o GLCM.
 float *glcm(int **pixel, float **glcm_vec, int x){
+  int i = 0, j = 0;
   int vizinho_cima[256][256] = {0}, vizinho_cima_esquerda[256][256] = {0},
   vizinho_cima_direita[256][256] = {0};
   int vizinho_direita[256][256] = {0}, vizinho_esquerda[256][256] = {0};
@@ -303,111 +377,111 @@ float *glcm(int **pixel, float **glcm_vec, int x){
   vizinho_baixo_direita[256][256] = {0};
   float energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
 
-  for(int i=1;i<1025;i++){
-    for(int j=1;j<1025;j++){
+  for(i = 1; i < 1025; i++){
+    for(j = 1; j < 1025; j++){
       vizinho_cima_esquerda[*(*(pixel+i)+j)][*(*(pixel+(i-1))+(j-1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[0] += pow(vizinho_cima_esquerda[i][j],2);
       contraste[0] += pow(fabs(i-j),2)*vizinho_cima_esquerda[i][j];
       homogeneidade[0] += vizinho_cima_esquerda[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=1;i<1025;i++){
-    for(int j=0;j<1025;j++){
+  for(i = 1; i < 1025; i++){
+    for(j = 0; j < 1025; j++){
       vizinho_cima[*(*(pixel+i)+j)][*(*(pixel+(i-1))+j)] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[1] += pow(vizinho_cima[i][j],2);
       contraste[1] += pow(fabs(i-j),2)*vizinho_cima[i][j];
       homogeneidade[1] += vizinho_cima[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=1;i<1025;i++){
-    for(int j=0;j<1024;j++){
+  for(i = 1; i < 1025; i++){
+    for(j = 0; j < 1024; j++){
       vizinho_cima_direita[*(*(pixel+i)+j)][*(*(pixel+(i-1))+(j+1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[2] += pow(vizinho_cima_direita[i][j],2);
       contraste[2] += pow(fabs(i-j),2)*vizinho_cima_direita[i][j];
       homogeneidade[2] += vizinho_cima_direita[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=0;i<1025;i++){
-    for(int j=1;j<1025;j++){
+  for(i = 0; i < 1025; i++){
+    for(j = 1; j < 1025; j++){
       vizinho_esquerda[*(*(pixel+i)+j)][*(*(pixel+i)+(j-1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[3] += pow(vizinho_esquerda[i][j],2);
       contraste[3] += pow(fabs(i-j),2)*vizinho_esquerda[i][j];
       homogeneidade[3] += vizinho_esquerda[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=0;i<1025;i++){
-    for(int j=0;j<1024;j++){
+  for(i = 0; i < 1025; i++){
+    for(j = 0; j < 1024; j++){
       vizinho_direita[*(*(pixel+i)+j)][*(*(pixel+i)+(j+1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[4] += pow(vizinho_direita[i][j],2);
       contraste[4] += pow(fabs(i-j),2)*vizinho_direita[i][j];
       homogeneidade[4] += vizinho_direita[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=0;i<1024;i++){
-    for(int j=1;j<1025;j++){
+  for(i = 0; i < 1024; i++){
+    for(j = 1; j < 1025; j++){
       vizinho_baixo_esquerda[*(*(pixel+i)+j)][*(*(pixel+(i+1))+(j-1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[5] += pow(vizinho_baixo_esquerda[i][j],2);
       contraste[5] += pow(fabs(i-j),2)*vizinho_baixo_esquerda[i][j];
       homogeneidade[5] += vizinho_baixo_esquerda[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=0;i<1024;i++){
-    for(int j=0;j<1025;j++){
+  for(i = 0; i < 1024; i++){
+    for(j = 0; j < 1025; j++){
       vizinho_baixo[*(*(pixel+i)+j)][*(*(pixel+(i+1))+j)] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[6] += pow(vizinho_baixo[i][j],2);
       contraste[6] += pow(fabs(i-j),2)*vizinho_baixo[i][j];
       homogeneidade[6] += vizinho_baixo[i][j]/(1+(abs(i-j)));
     }
   }
 
-  for(int i=0;i<1024;i++){
-    for(int j=0;j<1024;j++){
+  for(i = 0; i < 1024; i++){
+    for(j = 0; j < 1024; j++){
       vizinho_baixo_direita[*(*(pixel+i)+j)][*(*(pixel+(i+1))+(j+1))] += 1;
     }
   }
-  for(int i=0;i<256;i++){
-    for(int j=0;j<256;j++){
+  for(i = 0; i < 256; i++){
+    for(j = 0; j < 256; j++){
       energia[7] += pow(vizinho_baixo_direita[i][j],2);
       contraste[7] += pow(fabs(i-j),2)*vizinho_baixo_direita[i][j];
       homogeneidade[7] += vizinho_baixo_direita[i][j]/(1+(abs(i-j)));
     }
   }
-  
-  for(int i=512;i<536;i++){
+
+  for(i = 512; i < 536; i++){
     if(i%3==0){
       *(*(glcm_vec+x)+i)=energia[(i-512)/3];
     }
