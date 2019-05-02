@@ -250,7 +250,7 @@ int main(int argc, char** argv){
   falsa_aceitacao *= 2.0;
 
   //Saída padrão no terminal, apresentando as taxas de acerto, falsa aceitação e falsa rejeição.
-  printf("Aceitação: %.1f%%\nFalsa Aceitação: %.1f%%\nFalsa Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
+  printf("Acerto: %.1f%%\nFalsa Aceitação: %.1f%%\nFalsa Rejeição: %.1f%%\n", aceitacao, falsa_aceitacao, falsa_rejeicao);
 
   //Liberando as últimas alocações feitas.
   for(a = 0; a < 25; a++){
