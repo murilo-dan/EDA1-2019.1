@@ -38,14 +38,14 @@ int main(int argc, char** argv){
 
   //O programa pode levar alguns minutos para terminar a execução.
   //Caso queira visualizar qual arquivo está sendo analisado no momento
-  // e em qual parte está o programa, mude a variável "debug" para "true".
-  bool debug = false;
+  // e em qual parte está o programa, mude a variável "flow" para "true".
+  bool flow = false;
 
   //Randomizando os vetores.
   shuffle(ASPHALT);
   shuffle(GRASS);
 
-  if(debug)printf("==========TREINAMENTO ASFALTO==========\n");
+  if(flow)printf("==========TREINAMENTO ASFALTO==========\n");
   //Aqui são realizados todos os cálculos necessários para o treinamento com as imagens de asfalto.
   for(i = 0; i < 25; i++){
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    if(debug)printf("%s\n", training_data);
+    if(flow)printf("%s\n", training_data);
 
     //Abrindo o arquivo .txt da imagem.
     fp = fopen(training_data, "r");
@@ -97,7 +97,7 @@ int main(int argc, char** argv){
     free(*(vectors+a));
   }
 
-  if(debug)printf("==========TREINAMENTO GRAMA==========\n");
+  if(flow)printf("==========TREINAMENTO GRAMA==========\n");
   //Aqui são realizados todos os cálculos necessários para o treinamento com as imagens de grama.
   for(i = 0; i < 25; i++){
     //O processo aqui será semelhante ao do treinamento com as imagens de asfalto,
@@ -109,7 +109,7 @@ int main(int argc, char** argv){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    if(debug)printf("%s\n", training_data);
+    if(flow)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
@@ -142,7 +142,7 @@ int main(int argc, char** argv){
     free(*(vectors+a));
   }
 
-  if(debug)printf("==========TESTE ASFALTO==========\n");
+  if(flow)printf("==========TESTE ASFALTO==========\n");
   //Aqui são realizados todos os cálculos necessários para o teste com as imagens de asfalto.
   for(i = 0; i < 25; i++){
 
@@ -157,7 +157,7 @@ int main(int argc, char** argv){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    if(debug)printf("%s\n", training_data);
+    if(flow)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
@@ -196,7 +196,7 @@ int main(int argc, char** argv){
     free(*(vectors+a));
   }
 
-  if(debug)printf("==========TESTE GRAMA==========\n");
+  if(flow)printf("==========TESTE GRAMA==========\n");
   //Aqui são realizados todos os cálculos necessários para o teste com as imagens de asfalto.
   for(i = 0; i < 25; i++){
     //O processo aqui será semelhante ao do teste com as imagens de asfalto,
@@ -210,7 +210,7 @@ int main(int argc, char** argv){
       *(pixels+a) = (int *)calloc(1025, sizeof(int));
     }
 
-    if(debug)printf("%s\n", training_data);
+    if(flow)printf("%s\n", training_data);
 
     fp = fopen(training_data, "r");
     preenche_pixels(fp, pixels);
@@ -329,6 +329,7 @@ double *ilbp(int **pixel, double **ilbp_vec, int x){
   int vetor[9] = {0};
   for(int i=1;i<1024;i++){
     for(int j=1;j<1024;j++){
+      //Realiza o cálculo da média na vizinhança de 8 do pixel analisado.
       min = 512;
       vetor[0] = *(*(pixel+(i-1))+(j-1));
       vetor[1] = *(*(pixel+(i-1))+j);
@@ -340,6 +341,7 @@ double *ilbp(int **pixel, double **ilbp_vec, int x){
       vetor[7] = *(*(pixel+(i+1))+j);
       vetor[8] = *(*(pixel+(i+1))+(j+1));
       media = (vetor[0]+vetor[1]+vetor[2]+vetor[3]+vetor[4]+vetor[5]+vetor[6]+vetor[7]+vetor[8])/9.0;
+      //Converte os valores para 1 ou 0, de acordo com a comparação com a média.
       for(int a=0;a<9;a++){
         if(vetor[a]>=media){
           bit[a]=1;
@@ -350,18 +352,22 @@ double *ilbp(int **pixel, double **ilbp_vec, int x){
       }
       for(int b=0;b<9;b++){
         total = 0;
+        //Converte o binário obtido para decimal.
         for(int a=8;a>=0;a--){
           total += bit[a] * pow(2,(8-a));
         }
+        //Armazena o menor decimal obtido.
         if(total<=min){
           min = total;
         }
+        //Faz um shift left no binário obtido.
         temp=bit[8];
         for(int k=8;k>0;k--){
           bit[k]=bit[k-1];
         }
         bit[0]=temp;
       }
+      //Incrementa 1 na posição do menor valor obtido.
       *(*(ilbp_vec+x)+min) += 1;
     }
   }
@@ -377,6 +383,9 @@ double *glcm(int **pixel, double **glcm_vec, int x){
   vizinho_baixo_direita[256][256] = {0};
   double energia[8] = {0}, contraste[8] = {0}, homogeneidade[8] = {0};
 
+  //Cada um dos grupos de laços a seguir realiza os cálculos do GLCM para uma direção,
+  // identificada pelo nome do vetor resultante.
+  //As métricas obtidas (energia, contraste e homogeneidade) são armazenadas nos respectivos vetores.
   for(i = 1; i < 1025; i++){
     for(j = 1; j < 1025; j++){
       vizinho_cima_esquerda[*(*(pixel+i)+j)][*(*(pixel+(i-1))+(j-1))] += 1;
@@ -481,6 +490,7 @@ double *glcm(int **pixel, double **glcm_vec, int x){
     }
   }
 
+  //Realiza o preenchimento das posições do GLCM, resultando no vetor ILBP + GLCM.
   for(i = 512; i < 536; i++){
     if(i%3==0){
       *(*(glcm_vec+x)+i)=energia[(i-512)/3];

@@ -21,6 +21,6 @@ A pasta "DataSet" deve estar no mesmo local que o main.c.
 
 O programa leva alguns minutos para executar, variando de acordo com a capacidade da máquina.
 
-Na linha 42 do código há uma variável booleana com o nome "debug", inicialmente setada para false.
+Na linha 42 do código há uma variável booleana com o nome "flow", inicialmente setada para false.
 Setar a variável para true fará com que o código imprima no terminal o nome de cada arquivo que está sendo lido,
 além de informar qual parte do programa está sendo executada (treinamento ou teste).
