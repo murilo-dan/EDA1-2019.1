@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
 typedef struct Elemento
 {
-    char nome[100];
-    char telefone[10];
-    char endereco[100];
+    char nome[102];
+    char telefone[12];
+    char endereco[102];
     unsigned int cep;
-    char nascimento[10];
+    char nascimento[13];
     struct Contato *proximo;
     struct Contato *anterior;
 } Contato;
@@ -66,30 +68,144 @@ void criaListaVazia(ListaA *lista)
 
 void inserirRegistro(ListaA *lista)
 {
+    int i;
+    char confirma;
     Contato *novoContato;
     FILE *Agenda;
     novoContato = (Contato *)malloc(sizeof(Contato));
     printf("Registre um novo contato.\nInsira o nome: ");
-    fgets(novoContato->nome, sizeof(novoContato->nome), stdin);
-    printf("Insira o telefone: ");
-    fgets(novoContato->telefone, sizeof(novoContato->telefone), stdin);
-    for(int i = 0; i < strlen(novoContato->telefone);i++){
-        if(novoContato->telefone[i] > '9' || novoContato->telefone[i] < '0' && novoContato->telefone != '-'){
-            printf("Entrada invalida\n");
+    for (i = 0; i < strlen(novoContato->nome) - 1;)
+    {
+        fgets(novoContato->nome, sizeof(novoContato->nome), stdin);
+        for (i = 0; i < strlen(novoContato->nome) - 1; i++)
+        {
+            if (isdigit(novoContato->nome[i]))
+            {
+                i = 0;
+                printf("Entrada inválida, certifique-se de utilizar somente caracteres válidos.\nDigite novamente: ");
+                break;
+            }
+        }
+    }
+    printf("Insira o telefone (xxxxx-xxxx): ");
+    for (i = 0; i < strlen(novoContato->telefone) - 1;)
+    {
+        fgets(novoContato->telefone, sizeof(novoContato->telefone), stdin);
+        if (strlen(novoContato->telefone) - 1 < 9)
+        {
+            i = 0;
+            printf("Entrada inválida, certifique-se de digitar um número no formato xxxxx-xxxx.\nDigite novamente: ");
+            continue;
+        }
+        for (i = 0; i < strlen(novoContato->telefone) - 1; i++)
+        {
+            if (isdigit(novoContato->telefone[i]))
+            {
+                continue;
+            }
+            else
+            {
+                if (novoContato->telefone[i] == '-' && i == 5)
+                    continue;
+                else
+                {
+                    printf("Entrada inválida, certifique-se de digitar um número no formato xxxxx-xxxx.\n");
+                    break;
+                }
+            }
+        }
+        if (novoContato->telefone[5] != '-' && i == strlen(novoContato->telefone) - 1)
+        {
+            for (; i > 4; i--)
+            {
+                novoContato->telefone[i + 1] = novoContato->telefone[i];
+            }
+            novoContato->telefone[i + 1] = '-';
+            break;
         }
     }
     printf("Insira o endereço: ");
     fgets(novoContato->endereco, sizeof(novoContato->endereco), stdin);
-    printf("Insira o CEP: ");
+    printf("Insira o CEP (somente dígitos): ");
     scanf("%d", &novoContato->cep);
     getchar();
     printf("Insira a data de nascimento no formato dd/mm/aaaa: ");
-    fgets(novoContato->nascimento, sizeof(novoContato->nascimento), stdin);
+    for (i = 0; i < strlen(novoContato->nascimento) - 1;)
+    {
+        fgets(novoContato->nascimento, sizeof(novoContato->nascimento), stdin);
+        if (strlen(novoContato->nascimento) - 1 < 8)
+        {
+            i = 0;
+            printf("Entrada inválida, certifique-se de digitar uma data no formato dd/mm/aaaa.\nDigite novamente: ");
+            continue;
+        }
+        for (i = 0; i < strlen(novoContato->nascimento) - 1; i++)
+        {
+            if (isdigit(novoContato->nascimento[i]))
+            {
+                continue;
+            }
+            else
+            {
+                if (novoContato->nascimento[i] == '/' && (i == 2 || i == 4 || i == 5))
+                {
+                    if (novoContato->nascimento[i] == '/' && novoContato->nascimento[i+2] == '/')
+                    {
+                        printf("Entrada inválida, certifique-se de digitar uma data no formato dd/mm/aaaa.\nDigite novamente: ");
+                        break;
+                    }
+                    else if (novoContato->nascimento[i] == '/' && novoContato->nascimento[i+1] == '/')
+                    {
+                        printf("Entrada inválida, certifique-se de digitar uma data no formato dd/mm/aaaa.\nDigite novamente: ");
+                        break;
+                    }
+                    continue;
+                }
+                else
+                {
+                    printf("Entrada inválida, certifique-se de digitar uma data no formato dd/mm/aaaa.\nDigite novamente: ");
+                    break;
+                }
+            }
+        }
+        int temp = i;
+        if (novoContato->nascimento[2] != '/' && i == strlen(novoContato->nascimento) - 1)
+        {
+            for (; i > 1; i--)
+            {
+                novoContato->nascimento[i + 1] = novoContato->nascimento[i];
+            }
+            novoContato->nascimento[i + 1] = '/';
+            if (novoContato->nascimento[5] != '/' && temp == strlen(novoContato->nascimento) - 2)
+            {
+
+                for (; temp > 3; temp--)
+                {
+                    novoContato->nascimento[temp + 2] = novoContato->nascimento[temp + 1];
+                }
+                novoContato->nascimento[temp + 2] = '/';
+                break;
+            }
+            break;
+        }
+        if (novoContato->nascimento[5] != '/' && i == strlen(novoContato->nascimento) - 1)
+        {
+
+            for (; temp > 4; temp--)
+            {
+                novoContato->nascimento[temp + 1] = novoContato->nascimento[temp];
+            }
+            novoContato->nascimento[temp + 1] = '/';
+            break;
+        }
+    }
     Agenda = fopen("contatos.txt", "a+");
-    fprintf(Agenda, "%s%s%s%d\n%s\n$\n", novoContato->nome, novoContato->telefone, novoContato->endereco, novoContato->cep, novoContato->nascimento);
+    fprintf(Agenda, "%s%s%s%d\n%s$\n", novoContato->nome, novoContato->telefone, novoContato->endereco, novoContato->cep, novoContato->nascimento);
     fclose(Agenda);
     novoContato->proximo = NULL;
     novoContato->anterior = NULL;
+    free(novoContato);
+    printf("Contato registrado com sucesso.\n\n\n");
 
     // if (lista->inicio == NULL)
     // {
