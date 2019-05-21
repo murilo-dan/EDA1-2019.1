@@ -118,26 +118,22 @@ void imprimeRegistrosEspecificos(ListaA *lista){
   printf("\nEscolha a string específica:\n");
   scanf("%s",stringEspecifica);
   char c[1000];
-  char linhas[100];
+  char linhas[1000];
   int i = 0;
   FILE *Agenda;
   Agenda = fopen("contatos.txt", "r");
   printf("Registros com a string procurada:\n");
-  while(!feof(Agenda)){
     while((fgets(c, sizeof(c), Agenda))!= NULL){
       if((strstr(c, stringEspecifica))!= NULL){
         printf("%s", c);
         printf("%d\n", aux);
         i = aux;
-        while(fgets(linhas, sizeof(linhas), Agenda)){
-          i++;
-          if(i>aux && i<aux+6){
-            printf("%s", linhas);
-          }
+        for(i=aux;i<aux+5;i++){
+          fgets(linhas, sizeof(linhas), Agenda);
+          printf("%s",linhas );
         }
       }
       aux++;
-    }
     }
   fclose(Agenda);
 }
