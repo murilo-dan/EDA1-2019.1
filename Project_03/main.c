@@ -14,28 +14,21 @@ typedef struct Elemento
     struct Contato *proximo;
     struct Contato *anterior;
 } Contato;
+Contato *lista = NULL;
 
-typedef struct Lista
-{
-    Contato *inicio;
-    Contato *fim;
-} ListaA;
-
-void inicializarLista(ListaA *l);
-void inserirRegistro(ListaA *l);
-void removerRegistrosEspecificos(ListaA *l);
+void inserirRegistro(Contato **);
+void removerRegistrosEspecificos();
 void imprimeRegistrosEspecificos();
-void imprimeRegistrosAlfabeticamente(ListaA *l);
-void insertionSort(Contato *c, ListaA *l, int n);
+void imprimeRegistrosAlfabeticamente(Contato *);
+void insertionSort(Contato *, int);
+void atualizarTxt(Contato *);
 
 int main()
 {
     int escolha = 0;
-    ListaA *list;
-    inicializarLista(list);
     do
     {
-        printf("\nFunções Disponíveis:\n");
+        printf("Funções Disponíveis:\n");
         printf("1. Inserir novo registro na agenda.\n");
         printf("2. Remover registros com certa string no nome.\n");
         printf("3. Visualizar registros com certa string no nome.\n");
@@ -46,18 +39,15 @@ int main()
         switch (escolha)
         {
         case 1:
-            inserirRegistro(list);
+            inserirRegistro(&lista);
             break;
-        case 2:
-            //removerRegistrosEspecificos();
-            //break;
-        case 3:
-            imprimeRegistrosEspecificos();
-            break;
+        case 2: //removerRegistrosEspecificos(); break;
+        case 3: imprimeRegistrosEspecificos(); break;
         case 4:
-            imprimeRegistrosAlfabeticamente(list);
+            imprimeRegistrosAlfabeticamente(lista);
             break;
         case 5:
+            atualizarTxt(lista);
             break;
         default:
             printf("Entrada inválida.\n");
@@ -66,23 +56,14 @@ int main()
     } while (escolha != 5);
     return 0;
 }
-
-void inicializarLista(ListaA *lista)
+void inserirRegistro(Contato **inicio)
 {
-    // FILE *Agenda;
-    // Agenda = fopen("contatos.txt", "r");
-    // fclose(Agenda);
-    lista->inicio = NULL;
-    lista->fim = NULL;
-}
-
-void inserirRegistro(ListaA *lista)
-{
-    FILE *Agenda;
-    int i;
     bool leap = false;
-    int numeroRegistros = 0;
+    int i;
+    char confirma;
+    int numeroRegistros = 1;
     Contato *novoContato;
+    Contato *fim = *inicio;
     novoContato = (Contato *)malloc(sizeof(Contato));
     printf("Registre um novo contato.\nInsira o nome: ");
     for (i = 0; i < strlen(novoContato->nome) - 1;)
@@ -226,7 +207,6 @@ void inserirRegistro(ListaA *lista)
             }
             divide = strtok(NULL, "/");
         }
-        printf("%d/%d/%d\n", day, month, year);
         if (month < 1 || day < 1 || day > 31 || month > 12 || year < 1903 || year > 2018)
         {
             printf("\nData inválida, digite novamente: ");
@@ -257,7 +237,7 @@ void inserirRegistro(ListaA *lista)
             i = 0;
             continue;
         }
-        else if (month == 2 && day > 28)
+        else if (!leap && month == 2 && day > 28)
         {
             printf("\nData inválida, digite novamente: ");
             i = 0;
@@ -265,37 +245,22 @@ void inserirRegistro(ListaA *lista)
         }
         break;
     }
-    Agenda = fopen("contatos.txt", "a+");
-    fprintf(Agenda, "%s%s%s%d\n%s$\n", novoContato->nome, novoContato->telefone, novoContato->endereco, novoContato->cep, novoContato->nascimento);
-    fclose(Agenda);
-    novoContato->proximo = NULL;
-    novoContato->anterior = NULL;
     printf("Contato registrado com sucesso.\n\n\n");
-    // if (lista->inicio == NULL)
-    // {
-    //     lista->inicio = novoContato;
-    //     lista->fim = novoContato;
-    // }
-    // else
-    // {
-    //     lista->fim->proximo = novoContato;
-    //     novoContato->anterior = lista->fim;
-    //     lista->fim = novoContato;
-    // }
+    novoContato->proximo = NULL;
+    if (*inicio == NULL)
+    {
+        novoContato->anterior = NULL;
+        *inicio = novoContato;
+
+    }
+    while (fim->proximo != NULL)
+    {
+        fim = fim->proximo;
+    }
+    fim->proximo = novoContato;
+    novoContato->anterior = fim;
     numeroRegistros++;
-    if (lista->inicio == NULL)
-    {
-        lista->inicio = novoContato;
-        lista->fim = novoContato;
-    }
-    else
-    {
-        lista->fim->proximo = novoContato;
-        novoContato->anterior = lista->fim;
-        lista->fim = novoContato;
-        // insertionSort(novoContato, lista, numeroRegistros);
-    }
-    free(novoContato);
+    insertionSort(novoContato, numeroRegistros);
 }
 
 void imprimeRegistrosEspecificos()
@@ -315,7 +280,6 @@ void imprimeRegistrosEspecificos()
         if ((strstr(c, stringEspecifica)) != NULL)
         {
             printf("%s", c);
-            printf("%d\n", aux);
             i = aux;
             for (i = aux; i < aux + 5; i++)
             {
@@ -327,19 +291,39 @@ void imprimeRegistrosEspecificos()
     }
     fclose(Agenda);
 }
-/*void insertionSort(Contato *novoContato, ListaA *lista, int numeroRegistros){
-  FILE *Agenda;
-  printf("Insertion sort de %s\n", novoContato->nome);
-  free(contatoOrdenado);
-}*/
 
-void imprimeRegistrosAlfabeticamente(ListaA *lista)
+// void insertionSort(Contato *novoContato, int numeroRegistros){
+//   printf("Insertion sort de %s\n", novoContato->nome);
+//   printf("Numero de registros: %d\n", numeroRegistros);
+//   Contato *contatoOrdenado = novoContato;
+//   for(int i=0;i<numeroRegistros;i++){
+//       while(strcmp(novoContato, contatoOrdenado)>0 && novoContato != NULL){
+//           contatoOrdenado = ;
+//       }
+//   }
+// }
+
+void imprimeRegistrosAlfabeticamente(Contato *lista)
 {
-    Contato *ptr = lista->inicio;
-
-    while (ptr != NULL)
+    Contato *fim;
+    while (lista != NULL)
     {
-        printf("%s\n%s\n%s\n%d\n%s\n", ptr->nome, ptr->telefone, ptr->endereco, ptr->cep, ptr->nascimento);
-        ptr = ptr->proximo;
+        printf("%s%s%s%d\n%s$\n", lista->nome, lista->telefone, lista->endereco, lista->cep, lista->nascimento);
+        fim = lista;
+        lista = lista->proximo;
     }
+}
+
+void atualizarTxt(Contato *lista)
+{
+    FILE *Agenda;
+    Contato *aux;
+    Agenda = fopen("contatos.txt", "w+");
+    while (lista != NULL)
+    {
+        aux = lista;
+        fprintf(Agenda, "%s%s%s%d\n%s$\n", aux->nome, aux->telefone, aux->endereco, aux->cep, aux->nascimento);
+        lista = lista->proximo;
+    }
+    fclose(Agenda);
 }
