@@ -4,27 +4,29 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-typedef struct Elemento
+typedef struct Contato
 {
     char nome[102];
     char telefone[12];
     char endereco[102];
     unsigned int cep;
     char nascimento[13];
-    struct Contato *proximo;
-    struct Contato *anterior;
+    struct Contato *next;
+    struct Contato *prev;
 } Contato;
-Contato *lista = NULL;
 
 void inserirRegistro(Contato **);
 void removerRegistrosEspecificos();
 void imprimeRegistrosEspecificos();
 void imprimeRegistrosAlfabeticamente(Contato *);
-void insertionSort(Contato *, int);
+void insertionSort(Contato **);
+void sortedInsert(Contato **, Contato *);
 void atualizarTxt(Contato *);
+void push(Contato **, char[], char[], char[], unsigned int, char[], Contato *, Contato *);
 
 int main()
 {
+    Contato *head = NULL;
     int escolha = 0;
     do
     {
@@ -39,15 +41,17 @@ int main()
         switch (escolha)
         {
         case 1:
-            inserirRegistro(&lista);
+            inserirRegistro(&head);
             break;
         case 2: //removerRegistrosEspecificos(); break;
-        case 3: imprimeRegistrosEspecificos(); break;
+        case 3:
+            imprimeRegistrosEspecificos();
+            break;
         case 4:
-            imprimeRegistrosAlfabeticamente(lista);
+            imprimeRegistrosAlfabeticamente(head);
             break;
         case 5:
-            atualizarTxt(lista);
+            atualizarTxt(head);
             break;
         default:
             printf("Entrada inválida.\n");
@@ -60,7 +64,6 @@ void inserirRegistro(Contato **inicio)
 {
     bool leap = false;
     int i;
-    char confirma;
     int numeroRegistros = 1;
     Contato *novoContato;
     Contato *fim = *inicio;
@@ -246,21 +249,39 @@ void inserirRegistro(Contato **inicio)
         break;
     }
     printf("Contato registrado com sucesso.\n\n\n");
-    novoContato->proximo = NULL;
+    novoContato->next = NULL;
     if (*inicio == NULL)
     {
-        novoContato->anterior = NULL;
+        novoContato->prev = NULL;
         *inicio = novoContato;
-
     }
-    while (fim->proximo != NULL)
+    while (fim->next != NULL)
     {
-        fim = fim->proximo;
+        fim = fim->next;
     }
-    fim->proximo = novoContato;
-    novoContato->anterior = fim;
+    fim->next = novoContato;
+    novoContato->prev = fim;
     numeroRegistros++;
-    insertionSort(novoContato, numeroRegistros);
+    insertionSort(&novoContato);
+}
+
+void push(Contato **head, char nome[], char telefone[], char endereco[], unsigned int cep, char nascimento[], Contato *next, Contato *prev)
+{
+    Contato *newNode = (Contato *)malloc(sizeof(Contato));
+
+    strcpy(newNode->nome, nome);
+    strcpy(newNode->telefone, telefone);
+    strcpy(newNode->endereco, endereco);
+    newNode->cep = cep;
+    strcpy(newNode->nascimento, nascimento);
+    newNode->next = (head);
+    newNode->prev = NULL;
+
+    if ((*head) != NULL)
+    {
+        (*head)->prev = newNode;
+    }
+    (*head) = newNode;
 }
 
 void imprimeRegistrosEspecificos()
@@ -292,38 +313,79 @@ void imprimeRegistrosEspecificos()
     fclose(Agenda);
 }
 
-// void insertionSort(Contato *novoContato, int numeroRegistros){
-//   printf("Insertion sort de %s\n", novoContato->nome);
-//   printf("Numero de registros: %d\n", numeroRegistros);
-//   Contato *contatoOrdenado = novoContato;
-//   for(int i=0;i<numeroRegistros;i++){
-//       while(strcmp(novoContato, contatoOrdenado)>0 && novoContato != NULL){
-//           contatoOrdenado = ;
-//       }
-//   }
-// }
-
-void imprimeRegistrosAlfabeticamente(Contato *lista)
+void insertionSort(Contato **head_ref)
 {
-    Contato *fim;
-    while (lista != NULL)
+    Contato *sorted = NULL;
+    Contato *current = *head_ref;
+
+    while (current != NULL)
     {
-        printf("%s%s%s%d\n%s$\n", lista->nome, lista->telefone, lista->endereco, lista->cep, lista->nascimento);
-        fim = lista;
-        lista = lista->proximo;
+        Contato *next = current->next;
+        current->prev = current->next = NULL;
+        sortedInsert(&sorted, current);
+        current = next;
+    }
+    *head_ref = sorted;
+}
+
+void sortedInsert(Contato **head_ref, Contato *newNode)
+{
+    Contato *current;
+    Contato *temp;
+    Contato *temp2;
+
+    if (*head_ref == NULL)
+    {
+        *head_ref = newNode;
+    }
+    else if (strcmp((*head_ref)->nome, newNode->nome) >= 0)
+    {
+        newNode->next = *head_ref;
+        newNode->next->prev = newNode;
+        *head_ref = temp;
+    }
+    else
+    {
+        current = *head_ref;
+        temp = current->next;
+
+        while (current->next != NULL && (strcmp(current->next->nome, newNode->nome) < 0))
+        {
+            current = current->next;
+        }
+
+        newNode->next = current->next;
+
+        if (current->next != NULL)
+        {
+            newNode->next->prev = newNode;
+        }
+        current->next = temp;
+        temp->prev = current;
     }
 }
 
-void atualizarTxt(Contato *lista)
+void imprimeRegistrosAlfabeticamente(Contato *head)
+{
+    Contato *fim;
+    while (head != NULL)
+    {
+        printf("%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
+        fim = head;
+        head = head->next;
+    }
+}
+
+void atualizarTxt(Contato *head)
 {
     FILE *Agenda;
     Contato *aux;
     Agenda = fopen("contatos.txt", "w+");
-    while (lista != NULL)
+    while (head != NULL)
     {
-        aux = lista;
+        aux = head;
         fprintf(Agenda, "%s%s%s%d\n%s$\n", aux->nome, aux->telefone, aux->endereco, aux->cep, aux->nascimento);
-        lista = lista->proximo;
+        head = head->next;
     }
     fclose(Agenda);
 }
