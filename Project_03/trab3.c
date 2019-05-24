@@ -18,7 +18,8 @@ void insertionSort(struct Contato **);
 void printList(struct Contato *);
 void push(struct Contato **, char[], char[], char[], unsigned int, char[]);
 void imprimeRegistrosEspecificos(struct Contato *);
-void removerRegistrosEspecificos(struct Contato **);
+void removeRegistrosEspecificos(struct Contato **);
+void freeRegistros(struct Contato **);
 struct Contato *inserirRegistro();
 
 int main()
@@ -44,7 +45,7 @@ int main()
             insertionSort(&head);
             break;
         case 2:
-            removerRegistrosEspecificos(&head);
+            removeRegistrosEspecificos(&head);
             break;
         case 3:
             imprimeRegistrosEspecificos(head);
@@ -53,6 +54,7 @@ int main()
             printList(head);
             break;
         case 5:
+            freeRegistros(&head);
             printf("\nFechando agenda.\n\n");
             break;
         default:
@@ -294,6 +296,17 @@ void insertionSort(struct Contato **head_ref)
     *head_ref = sorted;
 }
 
+void freeRegistros(struct Contato **head)
+{
+    struct Contato *current = *head;
+    while (current != NULL)
+    {
+        struct Contato *next = current->next;
+        free(current);
+        current = next;
+    }
+}
+
 void printList(struct Contato *head)
 {
     bool exists = false;
@@ -332,7 +345,7 @@ void push(struct Contato **head_ref, char nome[], char telefone[], char endereco
     (*head_ref) = newNode;
 }
 
-void removerRegistrosEspecificos(struct Contato **head)
+void removeRegistrosEspecificos(struct Contato **head)
 {
     struct Contato *del = (*head);
     bool exists = false;
