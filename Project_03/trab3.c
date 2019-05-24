@@ -317,13 +317,15 @@ void printList(struct Contato *head)
             printf("\nLista de contatos:\n\n");
             exists = true;
         }
-        printf("%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
+        printf("Nome: %sTelefone: %sEndereço: %sCEP: %d\nData de nascimento: %s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
         head = head->next;
     }
     if (!exists)
     {
         printf("\nLista de contatos vazia.\n\n");
+        return;
     }
+    printf("\n");
 }
 
 void push(struct Contato **head_ref, char nome[], char telefone[], char endereco[], unsigned int cep, char nascimento[])
@@ -380,6 +382,7 @@ void removeRegistrosEspecificos(struct Contato **head)
     if (!exists)
     {
         printf("\nNenhum registro encontrado com a string dada.\n\n");
+        return;
     }
 }
 
@@ -398,12 +401,14 @@ void imprimeRegistrosEspecificos(struct Contato *head)
                 printf("\nRegistros com a string procurada:\n\n");
                 exists = true;
             }
-            printf("%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
+            printf("Nome: %sTelefone: %sEndereço: %sCEP: %d\nData de nascimento: %s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
         }
         head = head->next;
     }
     if (!exists)
     {
         printf("\nNenhum registro encontrado com a string dada.\n\n");
+        return;
     }
+    printf("\n");
 }
