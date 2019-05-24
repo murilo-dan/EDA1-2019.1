@@ -17,8 +17,9 @@ struct Contato
 void insertionSort(struct Contato **);
 void printList(struct Contato *);
 void push(struct Contato **, char[], char[], char[], unsigned int, char[]);
-struct Contato *inserirRegistro();
 void imprimeRegistrosEspecificos(struct Contato *);
+void removerRegistrosEspecificos(struct Contato **);
+struct Contato *inserirRegistro();
 
 int main()
 {
@@ -43,6 +44,7 @@ int main()
             insertionSort(&head);
             break;
         case 2:
+            removerRegistrosEspecificos(&head);
             break;
         case 3:
             imprimeRegistrosEspecificos(head);
@@ -53,7 +55,7 @@ int main()
         case 5:
             break;
         default:
-            printf("Entrada inválida.\n");
+            printf("\nEntrada inválida.\n\n");
             break;
         }
     } while (escolha != 5);
@@ -65,7 +67,7 @@ struct Contato *inserirRegistro()
     bool leap = false;
     int i;
     struct Contato *novoContato = (struct Contato *)malloc(sizeof(struct Contato));
-    printf("Registre um novo contato.\nInsira o nome: ");
+    printf("\nRegistre um novo contato.\nInsira o nome: ");
     for (i = 0; i < strlen(novoContato->nome) - 1;)
     {
         fgets(novoContato->nome, sizeof(novoContato->nome), stdin);
@@ -245,7 +247,7 @@ struct Contato *inserirRegistro()
         }
         break;
     }
-    printf("Contato registrado com sucesso.\n\n");
+    printf("\nContato registrado com sucesso.\n\n");
     return novoContato;
 }
 
@@ -293,10 +295,20 @@ void insertionSort(struct Contato **head_ref)
 
 void printList(struct Contato *head)
 {
+    bool exists = false;
     while (head != NULL)
     {
+        if (!exists)
+        {
+            printf("\nLista de contatos:\n\n");
+            exists = true;
+        }
         printf("%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
         head = head->next;
+    }
+    if (!exists)
+    {
+        printf("\nLista de contatos vazia.\n\n");
     }
 }
 
@@ -319,25 +331,65 @@ void push(struct Contato **head_ref, char nome[], char telefone[], char endereco
     (*head_ref) = newNode;
 }
 
+void removerRegistrosEspecificos(struct Contato **head)
+{
+    struct Contato *del = (*head);
+    bool exists = false;
+    char stringEspecifica[102];
+    printf("\nEscolha a string específica: ");
+    scanf("%s", stringEspecifica);
+    while (del != NULL)
+    {
+        if (strstr(del->nome, stringEspecifica) != NULL)
+        {
+            if (*head == del)
+            {
+                *head = del->next;
+            }
+            if (del->next != NULL)
+            {
+                del->next->prev = del->prev;
+            }
+            if (del->prev != NULL)
+            {
+                del->prev->next = del->next;
+            }
+            free(del);
+            if (!exists)
+            {
+                printf("\nRegistros deletados!\n\n");
+                exists = true;
+            }
+        }
+        del = del->next;
+    }
+    if (!exists)
+    {
+        printf("\nNenhum registro encontrado com a string dada.\n\n");
+    }
+}
+
 void imprimeRegistrosEspecificos(struct Contato *head)
 {
     bool exists = false;
     char stringEspecifica[102];
-    printf("\nEscolha a string específica:\n");
+    printf("\nEscolha a string específica: ");
     scanf("%s", stringEspecifica);
     while (head != NULL)
     {
         if (strstr(head->nome, stringEspecifica) != NULL)
         {
             if (!exists)
-                printf("Registros com a string procurada:\n");
-            exists = true;
+            {
+                printf("\nRegistros com a string procurada:\n\n");
+                exists = true;
+            }
             printf("%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
         }
         head = head->next;
     }
     if (!exists)
     {
-        printf("Nenhum registro encontrado com a string dada.\n\n");
+        printf("\nNenhum registro encontrado com a string dada.\n\n");
     }
 }
