@@ -53,6 +53,7 @@ int main()
             printList(head);
             break;
         case 5:
+            printf("\nFechando agenda.\n\n");
             break;
         default:
             printf("\nEntrada inválida.\n\n");
