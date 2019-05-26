@@ -20,12 +20,34 @@ void push(struct Contato **, char[], char[], char[], unsigned int, char[]);
 void imprimeRegistrosEspecificos(struct Contato *);
 void removeRegistrosEspecificos(struct Contato **);
 void freeRegistros(struct Contato **);
+void atualizarTxt(struct Contato *);
+void atualizarLista(struct Contato **);
 struct Contato *inserirRegistro();
 
 int main()
 {
     struct Contato *head = NULL;
     struct Contato *aux;
+    FILE *Agenda;
+    Agenda = fopen("contatos.txt", "r");
+    if (Agenda == NULL)
+    {
+        printf("\nCriando uma nova agenda.\n\n");
+    }
+    else
+    {
+        while (fgets(aux->nome, sizeof(aux->nome), Agenda) != NULL)
+        {
+            fgets(aux->telefone, sizeof(aux->telefone), Agenda);
+            fgets(aux->endereco, sizeof(aux->endereco), Agenda);
+            fscanf(Agenda, "%d\n", &aux->cep);
+            fgets(aux->nascimento, sizeof(aux->nascimento), Agenda);
+            push(&head, aux->nome, aux->telefone, aux->endereco, aux->cep, aux->nascimento);
+            fgets(aux->nome, sizeof(aux->nome), Agenda);
+        }
+        fclose(Agenda);
+        insertionSort(&head);
+    }
     int escolha = 0;
     do
     {
@@ -54,6 +76,7 @@ int main()
             printList(head);
             break;
         case 5:
+            atualizarTxt(head);
             freeRegistros(&head);
             printf("\nFechando agenda.\n\n");
             break;
@@ -411,4 +434,16 @@ void imprimeRegistrosEspecificos(struct Contato *head)
         return;
     }
     printf("\n");
+}
+
+void atualizarTxt(struct Contato *head)
+{
+    FILE *Agenda;
+    Agenda = fopen("contatos.txt", "w+");
+    while (head != NULL)
+    {
+        fprintf(Agenda, "%s%s%s%d\n%s$\n", head->nome, head->telefone, head->endereco, head->cep, head->nascimento);
+        head = head->next;
+    }
+    fclose(Agenda);
 }
