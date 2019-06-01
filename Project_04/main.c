@@ -3,12 +3,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-/*
-
-ARRUMAR A RANDOMIZAÇÃO DE COMBUSTÍVEL
-
-*/
-
 struct Fila
 {
     struct Plane *inicio;
@@ -24,12 +18,11 @@ struct Plane
 };
 
 void display(struct Plane *);
+int *shuffle(int *);
 
 int main(int argc, char **argv)
 {
-    
     srand(time(NULL));
-    printf("%d\n", rand());printf("%d\n", rand());
 
     struct Fila *fila = (struct Fila *)malloc(sizeof(struct Fila));
     fila->inicio = fila->fim = NULL;
@@ -118,35 +111,15 @@ int main(int argc, char **argv)
         NAprox = NVoos - NDec;
     }
     printf("Quantidade de\nVoos: %d - Aproximações: %d - Decolagens: %d\n", NVoos, NAprox, NDec);
-    int fuel[64] = {0};
-    for (int i = 0; i < 13; i++)
-    {
-        fuel[i] = i;
-    }
-    int type[64] = {0};
-    for (int i = 0; i < 64; i++)
-    {
-        type[i] = i % 2;
-    }
 
     int random[64] = {0};
-    for (int i = 0; i < 64; i++)
-    {
-        random[i] = (i);
-    }
-    for (int i = 0; i < 64; i++)
-    {
-        int temp = random[i];
-        int randomIndex = rand() % 64;
-        random[i] = random[randomIndex];
-        random[randomIndex] = temp;
-    }
+    shuffle(random);
 
     for (int i = 0; i < NVoos; i++)
     {
         struct Plane *newPlane = (struct Plane *)malloc(sizeof(struct Plane));
         strcpy(newPlane->id, idVoos[random[i]]);
-        if (type[random[i]] == 0 && NAprox != 0)
+        if (rand()%2 == 0 && NAprox != 0)
         {
             newPlane->mode = 'A';
             NAprox--;
@@ -162,14 +135,7 @@ int main(int argc, char **argv)
         }
         if (newPlane->mode == 'A')
         {
-            if (random[i] > 12)
-            {
-                newPlane->gas = fuel[random[i] % 13];
-            }
-            else
-            {
-                newPlane->gas = fuel[random[i]];
-            }
+            newPlane->gas = rand() % 13;
         }
         else
         {
@@ -199,4 +165,17 @@ void display(struct Plane *head)
         printf("ID: %s - Tipo: %c - Combustível: %d\n", head->id, head->mode, head->gas);
         display(head->next);
     }
+}
+
+int *shuffle(int *vetor){
+  for(int i = 1;i <= 50;i++){
+    vetor[i-1] = i;
+  }
+  for(int i = 0;i < 50;i++){
+    int temp = vetor[i];
+    int randomIndex = rand()%50;
+    vetor[i] = vetor[randomIndex];
+    vetor[randomIndex] = temp;
+  }
+  return vetor;
 }
