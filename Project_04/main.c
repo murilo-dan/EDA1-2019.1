@@ -27,7 +27,9 @@ void display(struct Plane *);
 
 int main(int argc, char **argv)
 {
+    
     srand(time(NULL));
+    printf("%d\n", rand());printf("%d\n", rand());
 
     struct Fila *fila = (struct Fila *)malloc(sizeof(struct Fila));
     fila->inicio = fila->fim = NULL;
