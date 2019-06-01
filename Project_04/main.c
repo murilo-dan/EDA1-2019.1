@@ -5,8 +5,8 @@
 
 struct Fila
 {
-    struct Plane *inicio;
-    struct Plane *fim;
+    struct Plane *front;
+    struct Plane *rear;
 };
 
 struct Plane
@@ -17,15 +17,21 @@ struct Plane
     struct Plane *next;
 };
 
+const int timeUnit = 5;
+int globalTime = 480;
+
 void display(struct Plane *);
 int *shuffle(int *);
+void emergencySwitch(struct Plane *);
 
 int main(int argc, char **argv)
 {
     srand(time(NULL));
 
+    struct Plane *head = NULL;
+
     struct Fila *fila = (struct Fila *)malloc(sizeof(struct Fila));
-    fila->inicio = fila->fim = NULL;
+    fila->front = fila->rear = NULL;
 
     char *idVoos[64] = {"VG3001",
                         "JJ4404",
@@ -91,48 +97,35 @@ int main(int argc, char **argv)
                         "KL5609",
                         "KL5610",
                         "KL5611"};
-    int NVoos = rand() % 45 + 20;
-    int NAprox = rand() % (NVoos - 9) + 10;
-    int NDec;
-    if (NAprox > 32)
-        NAprox = 32;
-    if ((NVoos - NAprox) < 10)
-    {
-        NDec = 10;
-        NAprox = NVoos - 10;
-    }
-    else
-    {
-        NDec = NVoos - NAprox;
-    }
-    if (NDec > 32)
-    {
-        NDec = 32;
-        NAprox = NVoos - NDec;
-    }
-    printf("Quantidade de\nVoos: %d - Aproximações: %d - Decolagens: %d\n", NVoos, NAprox, NDec);
-
+    int NAprox = rand() % 23 + 10;
+    int NDec = rand() % 23 + 10;
+    int NVoos = NAprox + NDec;
+    int aprox_aux = NAprox;
+    int dec_aux = NDec;
     int random[64] = {0};
     shuffle(random);
 
     for (int i = 0; i < NVoos; i++)
     {
         struct Plane *newPlane = (struct Plane *)malloc(sizeof(struct Plane));
+
         strcpy(newPlane->id, idVoos[random[i]]);
-        if (rand()%2 == 0 && NAprox != 0)
+
+        if (rand() % 2 == 0 && aprox_aux != 0)
         {
             newPlane->mode = 'A';
-            NAprox--;
+            aprox_aux--;
         }
-        else if (NDec != 0)
+        else if (dec_aux != 0)
         {
             newPlane->mode = 'D';
-            NDec--;
+            dec_aux--;
         }
         else
         {
             newPlane->mode = 'A';
         }
+
         if (newPlane->mode == 'A')
         {
             newPlane->gas = rand() % 13;
@@ -141,41 +134,60 @@ int main(int argc, char **argv)
         {
             newPlane->gas = -1;
         }
-        if (fila->inicio == NULL)
+
+        if (fila->front == NULL)
         {
-            fila->inicio = fila->fim = newPlane;
+            fila->front = fila->rear = newPlane;
             continue;
         }
-        fila->inicio->next = newPlane;
-        fila->inicio = newPlane;
+
+        fila->front->next = newPlane;
+        fila->front = newPlane;
     }
-    display(fila->fim);
+    printf("Aeroporto Internacional de Brasília\nHora inicial: %02d:%02d\nFila de pedidos:\nCódgigo de voo - Tipo - Prioridade\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
+    display(fila->rear);
+    printf("\nNVoos: %d\nNAproximações: %d\nNDecolagens: %d\n\nListagem de eventos:\n", NVoos, NAprox, NDec);
     return 0;
+}
+
+void emergencySwitch(struct Plane *head)
+{
+
 }
 
 void display(struct Plane *head)
 {
     if (head == NULL)
     {
-        printf("Final da fila.\n");
         return;
     }
     else
     {
-        printf("ID: %s - Tipo: %c - Combustível: %d\n", head->id, head->mode, head->gas);
+        printf("     %s    -   %c  -    ", head->id, head->mode);
+        if (head->gas == -1)
+        {
+            printf("N/A\n");
+        }
+        else
+        {
+            printf("%d\n", head->gas);
+        }
         display(head->next);
     }
 }
 
-int *shuffle(int *vetor){
-  for(int i = 1;i <= 50;i++){
-    vetor[i-1] = i;
-  }
-  for(int i = 0;i < 50;i++){
-    int temp = vetor[i];
-    int randomIndex = rand()%50;
-    vetor[i] = vetor[randomIndex];
-    vetor[randomIndex] = temp;
-  }
-  return vetor;
+int *shuffle(int *vetor)
+{
+    for (int i = 1; i <= 50; i++)
+    {
+        vetor[i - 1] = i;
+    }
+    for (int i = 0; i < 50; i++)
+    {
+        int temp = vetor[i];
+        int randomIndex = rand() % 50;
+        vetor[i] = vetor[randomIndex];
+        vetor[randomIndex] = temp;
+    }
+    return vetor;
 }
