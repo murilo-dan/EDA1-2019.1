@@ -2,6 +2,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 struct Fila
 {
@@ -19,10 +20,14 @@ struct Plane
 
 const int timeUnit = 5;
 int globalTime = 480;
+bool pista1 = false, pista2 = false, pista3 = false;
 
+void removeAirplane(struct Plane *, struct Fila *);
 void display(struct Plane *);
 int *shuffle(int *);
-void emergencySwitch();
+void management(struct Plane *);
+void emergencySwitch(struct Fila *);
+void timePassage(struct Plane *);
 
 int main(int argc, char **argv)
 {
@@ -143,17 +148,54 @@ int main(int argc, char **argv)
     printf("Aeroporto Internacional de Brasília\nHora inicial: %02d:%02d\nFila de pedidos:\nCódgigo de voo - Tipo - Prioridade\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
     display(fila->front);
     printf("\nNVoos: %d\nNAproximações: %d\nNDecolagens: %d\n\nListagem de eventos:\n", NVoos, NAprox, NDec);
+    while(NVoos!=0)
+    {
+      emergencySwitch(fila);
+      management(fila->front);
+      timePassage(fila->front);
+      NVoos--;
+    }
+    return 0;
+}
 
+void management(struct Plane *head)
+{
+    while(head!=NULL)
+    {
+      if(head->gas == 0)
+      {
+        if(pista1 == false)
+        {
+          pista1 = true;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        if(pista2 == false)
+        {
+          pista2 = true;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        if(pista3 == false)
+        {
+          pista3 = true;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+      }
+      head = head->next;
+    }
+}
+
+void emergencySwitch(struct Fila *fila)
+{
     struct Plane *current = (struct Plane *)malloc(sizeof(struct Plane));
-    struct Plane *prev, *temp;
+    struct Plane *prev, *temp, *temp2;
     current = fila->front;
-
+    int gasCheck = 0;
     if (fila->front->gas == 0)
     {
         prev = current;
         current = current->next;
+        gasCheck++;
     }
-
     while (current->next != NULL)
     {
         if (current->gas == 0)
@@ -163,12 +205,18 @@ int main(int argc, char **argv)
             current->next = temp;
             fila->front = current;
             current = prev->next;
+            gasCheck++;
+            if(gasCheck==4)
+            {
+              temp2 = fila->front;
+              gasCheck--;
+              removeAirplane(temp2, fila);
+            }
             continue;
         }
         prev = current;
         current = current->next;
     }
-
     if (fila->rear->gas == 0)
     {
         prev->next = NULL;
@@ -177,12 +225,25 @@ int main(int argc, char **argv)
         fila->front = current;
         fila->rear = prev;
     }
-    display(fila->front);
-    return 0;
 }
 
-void emergencySwitch()
+void timePassage(struct Plane *head)
 {
+    globalTime += timeUnit;
+    while(head != NULL)
+    {
+      if(head->gas!=-1 && head->gas!=0)
+      {
+        head->gas--;
+      }
+      head = head->next;
+    }
+}
+
+void removeAirplane(struct Plane *head, struct Fila *fila)
+{
+    fila->front = fila->front->next;
+    printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR.\n",head->id);
 }
 
 void display(struct Plane *head)
