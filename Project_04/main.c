@@ -162,16 +162,20 @@ int main(int argc, char **argv)
             temp = fila->front;
             current->next = temp;
             fila->front = current;
-            prev = prev->next;
-            if (prev->next->next == NULL)
-            {
-                break;
-            }
-            current = prev->next->next;
+            current = prev->next;
             continue;
         }
         prev = current;
         current = current->next;
+    }
+
+    if (fila->rear->gas == 0)
+    {
+        prev->next = NULL;
+        temp = fila->front;
+        current->next = temp;
+        fila->front = current;
+        fila->rear = prev;
     }
     display(fila->front);
     return 0;
