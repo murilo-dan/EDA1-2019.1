@@ -22,16 +22,14 @@ int globalTime = 480;
 
 void display(struct Plane *);
 int *shuffle(int *);
-void emergencySwitch(struct Plane *);
+void emergencySwitch();
 
 int main(int argc, char **argv)
 {
     srand(time(NULL));
 
-    struct Plane *head = NULL;
-
     struct Fila *fila = (struct Fila *)malloc(sizeof(struct Fila));
-    fila->front = fila->rear = NULL;
+    fila->rear = fila->front = NULL;
 
     char *idVoos[64] = {"VG3001",
                         "JJ4404",
@@ -134,34 +132,58 @@ int main(int argc, char **argv)
         {
             newPlane->gas = -1;
         }
-
-        if (fila->front == NULL)
+        if (fila->rear == NULL)
         {
-            fila->front = fila->rear = newPlane;
+            fila->rear = fila->front = newPlane;
             continue;
         }
-
-        fila->front->next = newPlane;
-        fila->front = newPlane;
+        fila->rear->next = newPlane;
+        fila->rear = newPlane;
     }
     printf("Aeroporto Internacional de Brasília\nHora inicial: %02d:%02d\nFila de pedidos:\nCódgigo de voo - Tipo - Prioridade\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
-    display(fila->rear);
+    display(fila->front);
     printf("\nNVoos: %d\nNAproximações: %d\nNDecolagens: %d\n\nListagem de eventos:\n", NVoos, NAprox, NDec);
+
+    struct Plane *current = (struct Plane *)malloc(sizeof(struct Plane));
+    struct Plane *prev, *temp;
+    current = fila->front;
+
+    if (fila->front->gas == 0)
+    {
+        prev = current;
+        current = current->next;
+    }
+
+    while (current->next != NULL)
+    {
+        if (current->gas == 0)
+        {
+            prev->next = current->next;
+            temp = fila->front;
+            current->next = temp;
+            fila->front = current;
+            prev = prev->next;
+            if (prev->next->next == NULL)
+            {
+                break;
+            }
+            current = prev->next->next;
+            continue;
+        }
+        prev = current;
+        current = current->next;
+    }
+    display(fila->front);
     return 0;
 }
 
-void emergencySwitch(struct Plane *head)
+void emergencySwitch()
 {
-
 }
 
 void display(struct Plane *head)
 {
-    if (head == NULL)
-    {
-        return;
-    }
-    else
+    while (head != NULL)
     {
         printf("     %s    -   %c  -    ", head->id, head->mode);
         if (head->gas == -1)
@@ -172,7 +194,7 @@ void display(struct Plane *head)
         {
             printf("%d\n", head->gas);
         }
-        display(head->next);
+        head = head->next;
     }
 }
 
