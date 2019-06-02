@@ -19,6 +19,7 @@ struct Plane
 };
 
 const int timeUnit = 5;
+int auxTime = 0;
 int globalTime = 480;
 bool pista1 = false, pista2 = false, pista3 = false;
 int pista1Usage = 0, pista2Usage = 0, pista3Usage = 0;
@@ -26,9 +27,10 @@ int pista1Usage = 0, pista2Usage = 0, pista3Usage = 0;
 void removeAirplane(struct Plane *, struct Fila *);
 void display(struct Plane *);
 int *shuffle(int *);
-void management(struct Plane *);
+int countQueue(struct Fila *);
+void management(struct Plane *, struct Fila *);
 void emergencySwitch(struct Fila *);
-void timePassage(struct Plane *);
+void timePassage(struct Fila *);
 
 int main(int argc, char **argv)
 {
@@ -152,14 +154,26 @@ int main(int argc, char **argv)
     while(NVoos!=0)
     {
       emergencySwitch(fila);
-      management(fila->front);
-      timePassage(fila->front);
-      NVoos--;
+      management(fila->front, fila);
+      timePassage(fila);
+      NVoos = countQueue(fila) - NDec;
     }
     return 0;
 }
 
-void management(struct Plane *head)
+int countQueue(struct Fila *fila)
+{
+    int contagem = 0;
+    struct Plane *head = fila->front;
+    while(head!=NULL)
+    {
+      contagem++;
+      head = head->next;
+    }
+    return contagem;
+}
+
+void management(struct Plane *head, struct Fila *fila)
 {
     while(head!=NULL)
     {
@@ -168,71 +182,39 @@ void management(struct Plane *head)
         if(pista1 == false)
         {
           pista1 = true;
-          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+          fila->front = fila->front->next;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
         }
         else if(pista2 == false)
         {
           pista2 = true;
-          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+          fila->front = fila->front->next;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
         }
-        else if(pista3 == false)
+        else if(pista3 == false && pista2 == true && pista1 == true)
         {
+          printf("ALERTA GERAL DE DESVIO DE AERONAVE\n");
           pista3 = true;
-          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
-        }
-        if(pista1 == true)
-        {
-          if(pista1Usage/timeUnit == 3)
-          {
-            pista1 = false;
-            pista1Usage = 0;
-          }
-          else
-          {
-            pista1Usage += 5;
-          }
-        }
-        else if(pista2 == true)
-        {
-          if(pista2Usage/timeUnit == 3)
-          {
-            pista2 = false;
-            pista2Usage = 0;
-          }
-          else
-          {
-            pista2Usage += 5;
-          }
-        }
-        else if(pista3 == true)
-        {
-          if(pista3Usage/timeUnit == 3)
-          {
-            pista3 = false;
-            pista3Usage = 0;
-          }
-          else
-          {
-            pista3Usage += 5;
-          }
+          fila->front = fila->front->next;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
         }
       }
-      else if(head->mode == 'D')
+    /*  else if(head->mode == 'D')
       {
         if(pista3 == false)
         {
           pista3 = true;
-          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\n%d\nNúmero da pista: Pista 3\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60, globalTime);
         }
         else if(pista2 == false)
         {
           pista2 = true;
-          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\n%d\nNúmero da pista: Pista 2\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60, globalTime);
         }
         else if(pista1 == false)
         {
           pista1 = true;
-          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\n%d\nNúmero da pista: Pista 1\n\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60, globalTime);
         }
         if(pista1 == true)
         {
@@ -270,8 +252,38 @@ void management(struct Plane *head)
             pista3Usage += 5;
           }
         }
-      }
+      }*/
       head = head->next;
+    }
+    if(pista1 == true)
+    {
+      pista1Usage += 5;
+      if(pista1Usage == 20)
+      {
+        pista1 = false;
+        printf("Pista 1 liberada as %02d:%02d!\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
+        pista1Usage = 0;
+      }
+    }
+    if(pista2 == true)
+    {
+      pista2Usage += 5;
+      if(pista2Usage == 20)
+      {
+        pista2 = false;
+        printf("Pista 2 liberada as %02d:%02d!\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
+        pista2Usage = 0;
+      }
+    }
+    if(pista3 == true)
+    {
+      pista3Usage += 5;
+      if(pista3Usage == 20)
+      {
+        pista3 = false;
+        printf("Pista 3 liberada as %02d:%02d!\n", globalTime / 60, globalTime - (globalTime / 60) * 60);
+        pista3Usage = 0;
+      }
     }
 }
 
@@ -297,11 +309,14 @@ void emergencySwitch(struct Fila *fila)
             fila->front = current;
             current = prev->next;
             gasCheck++;
-            if(gasCheck==4 || (pista1==true && pista2==true && pista3==true))
+            if(gasCheck==4)
             {
-              temp2 = fila->front;
               gasCheck--;
-              removeAirplane(temp2, fila);
+              if(pista1==true && pista2==true && pista3==true)
+              {
+                temp2 = fila->front;
+                removeAirplane(temp2, fila);
+              }
             }
             continue;
         }
@@ -318,23 +333,29 @@ void emergencySwitch(struct Fila *fila)
     }
 }
 
-void timePassage(struct Plane *head)
+void timePassage(struct Fila *fila)
 {
+    struct Plane *head = fila->front;
     globalTime += timeUnit;
+    auxTime++;
     while(head != NULL)
     {
-      if(head->gas!=-1 && head->gas!=0)
+      if(head->gas!=-1 && head->gas!=0 && auxTime==10)
       {
         head->gas--;
       }
       head = head->next;
+    }
+    if(auxTime==10)
+    {
+      auxTime = 0;
     }
 }
 
 void removeAirplane(struct Plane *head, struct Fila *fila)
 {
     fila->front = fila->front->next;
-    printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR.\n",head->id);
+    printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR ÁS %02d:%02d.\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
 }
 
 void display(struct Plane *head)
