@@ -21,6 +21,7 @@ struct Plane
 const int timeUnit = 5;
 int globalTime = 480;
 bool pista1 = false, pista2 = false, pista3 = false;
+int pista1Usage = 0, pista2Usage = 0, pista3Usage = 0;
 
 void removeAirplane(struct Plane *, struct Fila *);
 void display(struct Plane *);
@@ -169,15 +170,105 @@ void management(struct Plane *head)
           pista1 = true;
           printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
         }
-        if(pista2 == false)
+        else if(pista2 == false)
         {
           pista2 = true;
           printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
         }
-        if(pista3 == false)
+        else if(pista3 == false)
         {
           pista3 = true;
           printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        if(pista1 == true)
+        {
+          if(pista1Usage/timeUnit == 3)
+          {
+            pista1 = false;
+            pista1Usage = 0;
+          }
+          else
+          {
+            pista1Usage += 5;
+          }
+        }
+        else if(pista2 == true)
+        {
+          if(pista2Usage/timeUnit == 3)
+          {
+            pista2 = false;
+            pista2Usage = 0;
+          }
+          else
+          {
+            pista2Usage += 5;
+          }
+        }
+        else if(pista3 == true)
+        {
+          if(pista3Usage/timeUnit == 3)
+          {
+            pista3 = false;
+            pista3Usage = 0;
+          }
+          else
+          {
+            pista3Usage += 5;
+          }
+        }
+      }
+      else if(head->mode == 'D')
+      {
+        if(pista3 == false)
+        {
+          pista3 = true;
+          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 3\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        else if(pista2 == false)
+        {
+          pista2 = true;
+          printf("Código do voo: %s\nStatus: Aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 2\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        else if(pista1 == false)
+        {
+          pista1 = true;
+          printf("Código do voo: %s\nStatus: Aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: Pista 1\n",head->id, globalTime/60, globalTime - (globalTime / 60) * 60);
+        }
+        if(pista1 == true)
+        {
+          if(pista1Usage/timeUnit == 2)
+          {
+            pista1 = false;
+            pista1Usage = 0;
+          }
+          else
+          {
+            pista1Usage += 5;
+          }
+        }
+        if(pista2 == true)
+        {
+          if(pista2Usage/timeUnit == 2)
+          {
+            pista2 = false;
+            pista2Usage = 0;
+          }
+          else
+          {
+            pista2Usage += 5;
+          }
+        }
+        if(pista3 == true)
+        {
+          if(pista3Usage/timeUnit == 2)
+          {
+            pista3 = false;
+            pista3Usage = 0;
+          }
+          else
+          {
+            pista3Usage += 5;
+          }
         }
       }
       head = head->next;
@@ -206,7 +297,7 @@ void emergencySwitch(struct Fila *fila)
             fila->front = current;
             current = prev->next;
             gasCheck++;
-            if(gasCheck==4)
+            if(gasCheck==4 || (pista1==true && pista2==true && pista3==true))
             {
               temp2 = fila->front;
               gasCheck--;
