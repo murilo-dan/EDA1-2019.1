@@ -40,7 +40,7 @@ void decreaseOvertime(struct Plane *);
 void display(struct Plane *);
 void insertRequests(struct Queue *, int, int, int, int *, char **);
 void manageRequests(struct Plane *, int *, int *, int *, struct Queue *);
-void removeRequest(struct Plane *, struct Plane *, struct Queue *);
+void removeRequest(struct Plane *, struct Plane *, struct Queue *, int *);
 int emergencySwitch(struct Queue *, int *, int);
 int *shuffle(int *);
 
@@ -126,22 +126,25 @@ int main(int argc, char **argv)
     return 0;
 }
 
+//Função calcula o decaimento de combustível.
 void decreaseOvertime(struct Plane *head)
 {
+    //Condicional verifica se o globalTime passou de 23:59 para atualizar "decreaseFuel" de acordo.
+    //Garante que a função opere normalmente mesmo em casos de passagem do dia.
     if (decreaseFuel > globalTime)
     {
-        decreaseFuel = 0;
-        decreaseFuel -= globalTime;
+        decreaseFuel = decreaseFuel - 1440;
     }
-    int aux = globalTime - decreaseFuel;
-    if (aux >= 50)
+
+    //Caso a diferença de tempo seja maior ou igual a 50 minutos, atualiza "decreaseFuel" para bater com
+    // "globalTime" e diminui o nível de combustível em 1 para todos os aviões.
+    if ((globalTime - decreaseFuel) >= 50)
     {
-        decreaseFuel += 50;
-        decreaseFuel += (decreaseFuel - globalTime);
+        decreaseFuel = globalTime;
 
         while (head != NULL)
         {
-            if (head->fuel != -1 && head->fuel != 0)
+            if (head->fuel != -1)
             {
                 head->fuel--;
             }
@@ -150,11 +153,13 @@ void decreaseOvertime(struct Plane *head)
     }
 }
 
+//Função imprime todos os pedidos que ainda estiverem na lista, apresentando ID, tipo e nível de combustível.
 void display(struct Plane *head)
 {
     while (head != NULL)
     {
         printf("     %s    -   %c  -    ", head->id, head->mode);
+
         if (head->fuel == -1)
         {
             printf("N/A\n");
@@ -163,6 +168,7 @@ void display(struct Plane *head)
         {
             printf("%d\n", head->fuel);
         }
+
         head = head->next;
     }
 }
@@ -221,8 +227,10 @@ void insertRequests(struct Queue *queue, int NVoos, int NAprox, int NDec, int *r
     }
 }
 
+//Função gerencia as pistas do aeroporto, além de atualizar as variáveis de tempo.
 void manageRequests(struct Plane *head, int *emergency, int *NVoos, int *NDec, struct Queue *queue)
 {
+    //Condicionais garantem que o horário apresentado na tela não exceda os limite do dia (00:00 - 23:59).
     if (lane1 >= 1440)
     {
         lane1 = lane1 - 1440;
@@ -235,94 +243,83 @@ void manageRequests(struct Plane *head, int *emergency, int *NVoos, int *NDec, s
     {
         lane2 = lane2 - 1440;
     }
+
     struct Plane *prev = NULL;
+
+    //Itera até chegar ao fim da fila.
     while (head != NULL)
     {
+        //Condicional para os aviões de aproximação.
+        //As condicionais de "dentro" permitem que as pistas sejam utilizadas da maneira mais eficiente
+        //possível, sem que ocorram conflitos (duas operações na mesma pista ao mesmo tempo).
         if (head->mode == 'A')
         {
             if (lane1 <= globalTime)
             {
-                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 1\n\n", head->id, lane1 / 60, lane1 - (lane1 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 1\n\n", head->id, lane1 / 60, lane1 - (lane1 / 60) * 60);
                 lane1 += 4 * timeUnit;
-                removeRequest(head, prev, queue);
-                (*NVoos)--;
+                removeRequest(head, prev, queue, NVoos);
                 break;
             }
             else if (lane2 <= globalTime)
             {
-                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 2\n\n", head->id, lane2 / 60, lane2 - (lane2 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 2\n\n", head->id, lane2 / 60, lane2 - (lane2 / 60) * 60);
                 lane2 += 4 * timeUnit;
-                removeRequest(head, prev, queue);
-                (*NVoos)--;
+                removeRequest(head, prev, queue, NVoos);
                 break;
             }
+            //A pista 3 só será usada para pouso em caso de emergência ou caso os pedidos de decolagem acabem.
             else if (((*emergency) && lane3 <= globalTime) || (*NDec) <= 0)
             {
-                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 3\n\n", head->id, lane3 / 60, lane3 - (lane3 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 3\n\n", head->id, lane3 / 60, lane3 - (lane3 / 60) * 60);
                 lane3 += 4 * timeUnit;
-                removeRequest(head, prev, queue);
-                (*NVoos)--;
+                removeRequest(head, prev, queue, NVoos);
                 (*emergency) = 0;
                 break;
             }
-            else if (head->fuel == 0)
+            //Caso todas as pistas estejam indiponíveis e o combustível acabe, a aeronave cai.
+            else if (head->fuel == -1)
             {
                 printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR\n\n", head->id);
-                (*NVoos)--;
-                removeRequest(head, prev, queue);
+                removeRequest(head, prev, queue, NVoos);
                 break;
             }
         }
+        //Condicional para os aviões de decolagem. Pista 3 tem prioridade.
         else if (head->mode == 'D')
         {
             if (lane3 <= globalTime)
             {
-                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 3\n\n", head->id, lane3 / 60, lane3 - (lane3 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 3\n\n", head->id, lane3 / 60, lane3 - (lane3 / 60) * 60);
                 lane3 += 2 * timeUnit;
-                removeRequest(head, prev, queue);
+                removeRequest(head, prev, queue, NVoos);
                 (*NDec)--;
-                (*NVoos)--;
                 break;
             }
             else if (lane2 <= globalTime)
             {
-                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 2\n\n", head->id, lane2 / 60, lane2 - (lane2 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 2\n\n", head->id, lane2 / 60, lane2 - (lane2 / 60) * 60);
                 lane2 += 2 * timeUnit;
-                removeRequest(head, prev, queue);
+                removeRequest(head, prev, queue, NVoos);
                 (*NDec)--;
-                (*NVoos)--;
                 break;
             }
             else if (lane1 <= globalTime)
             {
-                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da lane: 1\n\n", head->id, lane1 / 60, lane1 - (lane1 / 60) * 60);
+                printf("Código do voo: %s\nStatus: aeronave decolou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 1\n\n", head->id, lane1 / 60, lane1 - (lane1 / 60) * 60);
                 lane1 += 2 * timeUnit;
-                removeRequest(head, prev, queue);
+                removeRequest(head, prev, queue, NVoos);
                 (*NDec)--;
-                (*NVoos)--;
                 break;
             }
         }
 
+        //Armazena o atual em "prev" e passa para o próximo.
         prev = head;
         head = head->next;
     }
 
-    if (head == NULL)
-    {
-        int min = 10000;
-        if (min >= lane1)
-        {
-            min = lane1;
-        }
-        if (min >= lane2)
-        {
-            min = lane2;
-        }
-        lane3 = min;
-        head = queue->front;
-    }
-
+    //Condicionais atualizam "globalTime" conforme os tempos das pistas para garantir melhor eficiência.
     if (lane1 <= globalTime)
     {
         globalTime = lane1;
@@ -337,7 +334,7 @@ void manageRequests(struct Plane *head, int *emergency, int *NVoos, int *NDec, s
     }
     else
     {
-        int min = 10000;
+        int min = 1500;
         if (min >= lane1)
         {
             min = lane1;
@@ -354,8 +351,10 @@ void manageRequests(struct Plane *head, int *emergency, int *NVoos, int *NDec, s
     }
 }
 
-void removeRequest(struct Plane *del, struct Plane *prev, struct Queue *queue)
+//Função retira um pedido da fila, seja na frente, no meio ou no final.
+void removeRequest(struct Plane *del, struct Plane *prev, struct Queue *queue, int *NVoos)
 {
+    (*NVoos)--;
     if (prev == NULL)
     {
         queue->front = del->next;
@@ -374,23 +373,31 @@ void removeRequest(struct Plane *del, struct Plane *prev, struct Queue *queue)
     }
 }
 
+//Função organiza a fila de acordo com a prioridade e fornece alertas de emergência.
 int emergencySwitch(struct Queue *queue, int *NVoos, int emergency)
 {
-    struct Plane *current = (struct Plane *)malloc(sizeof(struct Plane));
-    struct Plane *prev, *temp, *temp2;
+    struct Plane *current, *prev, *temp;
+
+    //Inicia leitura no começo da fila e contagem de aeronaves com 0 de combustível.
     current = queue->front;
     int fuelCheck = 0;
+
+    //Verifica a primeira aeronave da fila.
     if (queue->front->fuel == 0)
     {
         prev = current;
         current = current->next;
         fuelCheck++;
     }
+
+    //Verifica se há somente uma aeronave na fila.
     if (current == NULL)
     {
         (*NVoos)--;
         return emergency;
     }
+
+    //Verifica as aeronaves no meio da fila.
     while (current->next != NULL)
     {
         if (current->fuel == 0)
@@ -406,6 +413,8 @@ int emergencySwitch(struct Queue *queue, int *NVoos, int emergency)
         prev = current;
         current = current->next;
     }
+
+    //Verifica a última aeronave da fila.
     if (queue->rear->fuel == 0)
     {
         prev->next = NULL;
@@ -415,19 +424,11 @@ int emergencySwitch(struct Queue *queue, int *NVoos, int emergency)
         queue->rear = prev;
         fuelCheck++;
     }
-    if (fuelCheck > 3)
+
+    //Gera alerta de emergência caso haja 3 ou mais aeronaves com 0 de combustível. 
+    if (fuelCheck >= 3)
     {
         printf("ALERTA GERAL DE DESVIO DE AERONAVE\n\n");
-    }
-    while (fuelCheck > 3)
-    {
-        printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR\n\n", queue->front->id);
-        fuelCheck--;
-        (*NVoos)--;
-        removeRequest(current, prev, queue);
-    }
-    if (fuelCheck == 3)
-    {
         return 1;
     }
     return emergency;
