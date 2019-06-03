@@ -22,13 +22,13 @@ const int timeUnit = 5;
 int globalTime = 480;
 int pista1 = 480, pista2 = 480, pista3 = 480;
 int decrease_fuel = 0;
-bool emergency = false;
+int emergency = 0;
 
 void display(struct Plane *);
 int *shuffle(int *);
 void deQueue(struct Fila *);
-bool emergencySwitch(struct Fila *, int *, bool);
-void management(struct Plane *, bool *, int *, struct Fila *);
+int emergencySwitch(struct Fila *, int *, int);
+void management(struct Plane *, int *, int *, struct Fila *);
 void removePlane(struct Plane *, struct Plane *, struct Fila *);
 
 int main(int argc, char **argv)
@@ -154,6 +154,7 @@ int main(int argc, char **argv)
     for (; NVoos > 0;)
     {
         emergency = emergencySwitch(fila, &NVoos, emergency);
+        printf("EMERGENY ALERT: %d\n", emergency);
         management(fila->front, &emergency, &NVoos, fila);
     }
 
@@ -182,7 +183,7 @@ void removePlane(struct Plane *del, struct Plane *prev, struct Fila *fila)
     }
 }
 
-void management(struct Plane *head, bool *emergency, int *NVoos, struct Fila *fila)
+void management(struct Plane *head, int *emergency, int *NVoos, struct Fila *fila)
 {
     struct Plane *prev = NULL;
     while (head != NULL)
@@ -205,13 +206,13 @@ void management(struct Plane *head, bool *emergency, int *NVoos, struct Fila *fi
                 (*NVoos)--;
                 break;
             }
-            else if (emergency && pista3 <= globalTime)
+            else if ((*emergency) && pista3 <= globalTime)
             {
                 printf("Código do voo: %s\nStatus: aeronave pousou\nHorário do início do procedimento:%02d:%02d\nNúmero da pista: 3\n\n", head->id, pista3 / 60, pista3 - (pista3 / 60) * 60);
                 pista3 += 4 * timeUnit;
                 removePlane(head, prev, fila);
                 (*NVoos)--;
-                (*emergency) = false;
+                (*emergency) = 0;
                 break;
             }
         }
@@ -290,7 +291,7 @@ void management(struct Plane *head, bool *emergency, int *NVoos, struct Fila *fi
     }
 }
 
-bool emergencySwitch(struct Fila *fila, int *NVoos, bool emergency)
+int emergencySwitch(struct Fila *fila, int *NVoos, int emergency)
 {
     struct Plane *current = (struct Plane *)malloc(sizeof(struct Plane));
     struct Plane *prev, *temp, *temp2;
@@ -336,7 +337,7 @@ bool emergencySwitch(struct Fila *fila, int *NVoos, bool emergency)
     if (gasCheck == 3)
     {
         printf("ALERTA GERAL DE DESVIO DE AERONAVE\n\n");
-        return true;
+        return 1;
     }
     return emergency;
 }
