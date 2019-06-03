@@ -21,7 +21,7 @@ struct Plane
 const int timeUnit = 5;
 int globalTime = 480;
 int pista1 = 480, pista2 = 480, pista3 = 480;
-int decrease_fuel = 0;
+int decrease_fuel = 480;
 int emergency = 0;
 
 void display(struct Plane *);
@@ -30,6 +30,7 @@ void deQueue(struct Fila *);
 int emergencySwitch(struct Fila *, int *, int);
 void management(struct Plane *, int *, int *, struct Fila *);
 void removePlane(struct Plane *, struct Plane *, struct Fila *);
+void decrease_overtime(struct Plane *);
 
 int main(int argc, char **argv)
 {
@@ -154,13 +155,32 @@ int main(int argc, char **argv)
     for (; NVoos > 0;)
     {
         emergency = emergencySwitch(fila, &NVoos, emergency);
-        printf("EMERGENY ALERT: %d\n", emergency);
         management(fila->front, &emergency, &NVoos, fila);
+        decrease_overtime(fila->front);
     }
 
     printf("Todos os pedidos atendidos.\n\n");
 
     return 0;
+}
+
+void decrease_overtime(struct Plane *head)
+{
+    int aux = globalTime - decrease_fuel;
+    if (aux >= 50)
+    {
+        decrease_fuel += 50;
+        decrease_fuel += (decrease_fuel - globalTime);
+
+        while (head != NULL)
+        {
+            if (head->gas != -1 && head->gas != 0)
+            {
+                head->gas--;
+            }
+            head = head->next;
+        }
+    }
 }
 
 void removePlane(struct Plane *del, struct Plane *prev, struct Fila *fila)
@@ -213,6 +233,13 @@ void management(struct Plane *head, int *emergency, int *NVoos, struct Fila *fil
                 removePlane(head, prev, fila);
                 (*NVoos)--;
                 (*emergency) = 0;
+                break;
+            }
+            else if (head->gas == 0)
+            {
+                printf("ALERTA CRÍTICO, AERONAVE %s IRÁ CAIR\n\n", head->id);
+                (*NVoos)--;
+                removePlane(head, prev, fila);
                 break;
             }
         }
