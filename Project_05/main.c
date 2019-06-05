@@ -1,5 +1,12 @@
 #include <stdio.h>
 
+struct node
+{
+    int data;
+    struct node *left;
+    struct node *right;
+};
+
 void loadTreeFromFile();
 void showTree();
 void isFull();
