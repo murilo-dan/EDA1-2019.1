@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 struct node
 {
@@ -7,10 +9,12 @@ struct node
     struct node *right;
 };
 
+void printTree(struct node *);
+struct node *build123a();
 void loadTreeFromFile();
 void showTree();
 void isFull();
-void searchValue();
+void searchValue(struct node *, int);
 void getHeight();
 void removeValue();
 void printInOrder();
@@ -49,7 +53,8 @@ int main()
             isFull();
             break;
         case 4:
-            searchValue();
+            printTree(build123a());
+            //searchValue();
             break;
         case 5:
             getHeight();
@@ -80,33 +85,71 @@ int main()
     return 0;
 }
 
+void printTree(struct node *node)
+{
+    if (node == NULL)
+        return;
+    printTree(node->left);
+    printf("%d ", node->data);
+    printTree(node->right);
+}
+
+struct node *newNode(int data)
+{
+    struct node *node = (struct node *)malloc(sizeof(struct node));
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
+
+    return (node);
+}
+
+struct node *build123a()
+{
+    struct node *root = newNode(2);
+    struct node *lChild = newNode(1);
+    struct node *rChild = newNode(3);
+    root->left = lChild;
+    root->right = rChild;
+
+    return (root);
+}
+
 void loadTreeFromFile()
 {
 }
+
 void showTree()
 {
 }
 void isFull()
 {
 }
-void searchValue()
+
+void searchValue(struct node *node, int data)
 {
 }
+
 void getHeight()
 {
 }
+
 void removeValue()
 {
 }
+
 void printInOrder()
 {
 }
+
 void printPreOrder()
 {
 }
+
 void printPostOrder()
 {
 }
+
 void balanceTree()
 {
 }
