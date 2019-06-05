@@ -23,6 +23,7 @@ void balanceTree();
 
 int main()
 {
+    struct node *head = NULL;
     int escolha;
     do
     {
@@ -89,13 +90,18 @@ void loadTreeFromFile()
     int aux;
     char fileName[10];
     FILE *fp;
-    printf("Insira o nome do arquivo:\n");
+    printf("\nInsira o nome do arquivo: ");
     fscanf(stdin, "%s", fileName);
     fp = fopen(fileName, "r");
-    while(!feof(fp))
+    if (fp == NULL)
     {
-      fscanf(fp, "%d", &aux);
-      insertOnTree(&head, aux);
+        printf("\nArquivo não encontrado.\n");
+        return;
+    }
+    while (!feof(fp))
+    {
+        fscanf(fp, "%d", &aux);
+        insertOnTree(&head, aux);
     }
     fclose(fp);
     display(head);
@@ -103,33 +109,33 @@ void loadTreeFromFile()
 
 void display(struct node *head)
 {
-  if(head!=NULL)
-  {
-    display(head->left);
-    printf("%d\n",head->data);
-    display(head->right);
-  }
+    if (head != NULL)
+    {
+        display(head->left);
+        printf("%d\n", head->data);
+        display(head->right);
+    }
 }
 
 void insertOnTree(struct node **head, int num)
 {
-    if(*head==NULL)
+    if (*head == NULL)
     {
-      *head = malloc(sizeof(**head));
-      (*head)->data = num;
-      (*head)->left = NULL;
-      (*head)->right = NULL;
+        *head = malloc(sizeof(**head));
+        (*head)->data = num;
+        (*head)->left = NULL;
+        (*head)->right = NULL;
     }
     else
     {
-      if(num < (*head)->data)
-      {
-        insertOnTree(&(*head)->left, num);
-      }
-      if(num > (*head)->data)
-      {
-        insertOnTree(&(*head)->right, num);
-      }
+        if (num < (*head)->data)
+        {
+            insertOnTree(&(*head)->left, num);
+        }
+        if (num > (*head)->data)
+        {
+            insertOnTree(&(*head)->right, num);
+        }
     }
 }
 
