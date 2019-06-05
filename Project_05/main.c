@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 struct node
 {
     int data;
@@ -13,7 +14,7 @@ void insertOnTree(struct node **, int);
 void display(struct node *);
 void showTree();
 void isFull();
-void searchValue();
+void searchValue(struct node *, int);
 void getHeight();
 void removeValue();
 void printInOrder();
@@ -53,7 +54,7 @@ int main()
             isFull();
             break;
         case 4:
-            searchValue();
+            //searchValue();
             break;
         case 5:
             getHeight();
@@ -96,7 +97,6 @@ void loadTreeFromFile()
     if (fp == NULL)
     {
         printf("\nArquivo não encontrado.\n");
-        return;
     }
     while (!feof(fp))
     {
@@ -104,7 +104,6 @@ void loadTreeFromFile()
         insertOnTree(&head, aux);
     }
     fclose(fp);
-    display(head);
 }
 
 void display(struct node *head)
@@ -119,7 +118,7 @@ void display(struct node *head)
 
 void insertOnTree(struct node **head, int num)
 {
-    if (*head == NULL)
+    if ((*head) == NULL)
     {
         *head = malloc(sizeof(**head));
         (*head)->data = num;
@@ -142,11 +141,30 @@ void insertOnTree(struct node **head, int num)
 void showTree()
 {
 }
+
 void isFull()
 {
 }
-void searchValue()
+
+void searchValue(struct node *head, int target)
 {
+    if (head == NULL)
+    {
+        printf("\nValor não encontrado.\n");
+    }
+    else if (head->data == target)
+    {
+        printf("Valor encontrado.\n");
+        return;
+    }
+    else if (head->data > target)
+    {
+        searchValue(head->left, target);
+    }
+    else
+    {
+        searchValue(head->right, target);
+    }
 }
 void getHeight()
 {
