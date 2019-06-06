@@ -9,7 +9,7 @@ struct node
     struct node *right;
 };
 
-void loadTreeFromFile();
+struct node *loadTreeFromFile();
 void insertOnTree(struct node **, int);
 void display(struct node *);
 void showTree();
@@ -25,6 +25,7 @@ void balanceTree();
 int main()
 {
     struct node *head = NULL;
+    int target;
     int escolha;
     do
     {
@@ -45,7 +46,7 @@ int main()
         switch (escolha)
         {
         case 1:
-            loadTreeFromFile();
+            head = loadTreeFromFile();
             break;
         case 2:
             showTree();
@@ -54,7 +55,9 @@ int main()
             isFull();
             break;
         case 4:
-            //searchValue();
+            printf("\nDigite o valor a ser buscado: ");
+            scanf("%d", &target);
+            searchValue(head, target);
             break;
         case 5:
             getHeight();
@@ -85,7 +88,7 @@ int main()
     return 0;
 }
 
-void loadTreeFromFile()
+struct node *loadTreeFromFile()
 {
     struct node *head = NULL;
     int aux;
@@ -97,6 +100,7 @@ void loadTreeFromFile()
     if (fp == NULL)
     {
         printf("\nArquivo não encontrado.\n");
+        return head;
     }
     while (!feof(fp))
     {
@@ -104,6 +108,7 @@ void loadTreeFromFile()
         insertOnTree(&head, aux);
     }
     fclose(fp);
+    return head;
 }
 
 void display(struct node *head)
@@ -151,21 +156,75 @@ void searchValue(struct node *head, int target)
     if (head == NULL)
     {
         printf("\nValor não encontrado.\n");
+        return;
     }
     else if (head->data == target)
     {
-        printf("Valor encontrado.\n");
+        printf("Nível do valor encontrado: 1\n");
+        printf("Valor do pai: NULO\n");
+        printf("Valor do irmão: NULO\n");
         return;
     }
     else if (head->data > target)
     {
-        searchValue(head->left, target);
+        if (head->left != NULL)
+        {
+            if (head->left->data == target)
+            {
+                printf("Nível do valor encontrado: \n");
+                printf("Valor do pai: %d\n", head->data);
+                if (head->right != NULL)
+                {
+                    printf("Valor do irmão: %d\n", head->right->data);
+                }
+                else
+                {
+                    printf("Valor do irmão: NULO\n");
+                }
+                return;
+            }
+            else
+            {
+                searchValue(head->left, target);
+            }
+        }
+        else if (head->left == NULL)
+        {
+            printf("\nValor não encontrado.\n");
+            return;
+        }
     }
     else
     {
-        searchValue(head->right, target);
+        if (head->right != NULL)
+        {
+            if (head->right->data == target)
+            {
+                printf("Nível do valor encontrado: \n");
+                printf("Valor do pai: %d\n", head->data);
+                if (head->left != NULL)
+                {
+                    printf("Valor do irmão: %d\n", head->left->data);
+                }
+                else
+                {
+                    printf("Valor do irmão: NULO\n");
+                }
+                return;
+            }
+            else
+            {
+                searchValue(head->right, target);
+            }
+        }
+        else if (head->right == NULL)
+        {
+            printf("\nValor não encontrado.\n");
+            return;
+        }
     }
 }
+
 void getHeight()
 {
 }
