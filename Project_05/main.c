@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+
 struct node
 {
     int data;
@@ -8,12 +10,14 @@ struct node
     struct node *right;
 };
 
-void loadTreeFromFile();
+void printTree(struct node *);
+struct node *build123a();
+struct node *loadTreeFromFile();
 void insertOnTree(struct node **, int);
 void display(struct node *);
 void showTree();
 void isFull();
-void searchValue();
+void searchValue(struct node *, int);
 void getHeight();
 void removeValue();
 void printInOrder();
@@ -23,7 +27,7 @@ void balanceTree();
 
 int main()
 {
-    struct node *head = NULL;
+    struct node *tree = NULL;
     int escolha;
     do
     {
@@ -44,7 +48,7 @@ int main()
         switch (escolha)
         {
         case 1:
-            loadTreeFromFile();
+            tree = loadTreeFromFile();
             break;
         case 2:
             showTree();
@@ -53,7 +57,8 @@ int main()
             isFull();
             break;
         case 4:
-            searchValue();
+            printTree(build123a());
+            //searchValue();
             break;
         case 5:
             getHeight();
@@ -84,7 +89,37 @@ int main()
     return 0;
 }
 
-void loadTreeFromFile()
+void printTree(struct node *node)
+{
+    if (node == NULL)
+        return;
+    printTree(node->left);
+    printf("%d ", node->data);
+    printTree(node->right);
+}
+
+struct node *newNode(int data)
+{
+    struct node *node = (struct node *)malloc(sizeof(struct node));
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
+
+    return (node);
+}
+
+struct node *build123a()
+{
+    struct node *root = newNode(2);
+    struct node *lChild = newNode(1);
+    struct node *rChild = newNode(3);
+    root->left = lChild;
+    root->right = rChild;
+
+    return (root);
+}
+
+struct node *loadTreeFromFile()
 {
     struct node *head = NULL;
     int aux;
@@ -96,15 +131,17 @@ void loadTreeFromFile()
     if (fp == NULL)
     {
         printf("\nArquivo não encontrado.\n");
-        return;
     }
-    while (!feof(fp))
+    else
     {
-        fscanf(fp, "%d", &aux);
-        insertOnTree(&head, aux);
+      while (!feof(fp))
+      {
+          fscanf(fp, "%d", &aux);
+          insertOnTree(&head, aux);
+      }
+      fclose(fp);
+      display(head);
     }
-    fclose(fp);
-    display(head);
 }
 
 void display(struct node *head)
@@ -112,7 +149,7 @@ void display(struct node *head)
     if (head != NULL)
     {
         display(head->left);
-        printf("%d\n", head->data);
+        printf("%d ", head->data);
         display(head->right);
     }
 }
@@ -145,24 +182,31 @@ void showTree()
 void isFull()
 {
 }
-void searchValue()
+
+void searchValue(struct node *node, int data)
 {
 }
+
 void getHeight()
 {
 }
+
 void removeValue()
 {
 }
+
 void printInOrder()
 {
 }
+
 void printPreOrder()
 {
 }
+
 void printPostOrder()
 {
 }
+
 void balanceTree()
 {
 }
