@@ -10,31 +10,32 @@ struct node
     struct node *right;
 };
 
-void printTree(struct node *);
-struct node *build123a();
-struct node *loadTreeFromFile();
+struct node *loadTreeFromFile(char *);
 void insertOnTree(struct node **, int);
-void display(struct node *);
 void showTree();
-void isFull();
-void searchValue(struct node *, int);
-void getHeight();
-void removeValue();
-void printInOrder();
-void printPreOrder();
-void printPostOrder();
+bool isFull(struct node *);
+int searchValue(struct node *, int);
+int getHeight(struct node *);
+//int removeValue(struct node *, int);
+void printPreOrder(struct node *);
+void printInOrder(struct node *);
+void printPostOrder(struct node *);
 void balanceTree();
 
 int main()
 {
-    struct node *tree = NULL;
+    struct node *head = NULL;
+    int target;
     int escolha;
+    int height = 0;
+    bool fullCheck;
+    char fileName[10];
     do
     {
         printf("\nFunções Disponíveis:\n");
         printf("1. Carregar árvore de arquivo.\n");
         printf("2. Mostrar árvore.\n");
-        printf("3. Mostrar se a árvore está cheia.\n");
+        printf("3. Mostrar se a árvore é cheia.\n");
         printf("4. Buscar valor na árvore.\n");
         printf("5. Mostrar altura da árvore.\n");
         printf("6. Remover valor da árvore.\n");
@@ -48,32 +49,65 @@ int main()
         switch (escolha)
         {
         case 1:
-            tree = loadTreeFromFile();
+            printf("\nInsira o nome do arquivo: ");
+            fscanf(stdin, "%s", fileName);
+            head = loadTreeFromFile(fileName);
+            printf("%d\n",head->data);
             break;
         case 2:
             showTree();
             break;
         case 3:
-            isFull();
+            fullCheck = isFull(head);
+            if(fullCheck == true)
+            {
+              printf("A árvore é cheia.\n\n");
+            }
+            else if(fullCheck == false)
+            {
+              printf("A árvore não é cheia\n\n");
+            }
             break;
         case 4:
-            printTree(build123a());
-            //searchValue();
+            printf("\nDigite o valor a ser buscado: ");
+            scanf("%d", &target);
+            printf("\n");
+            target = searchValue(head, target);
+            if (target == 0)
+            {
+                break;
+            }
+            else
+            {
+                printf("Nível do valor encontrado: %d\n", target);
+            }
             break;
         case 5:
-            getHeight();
+            height = getHeight(head);
+            printf("%d\n",height);
             break;
         case 6:
-            removeValue();
+            printf("\nDigite o valor a ser removido: ");
+            scanf("%d\n",&target);
+            printf("\n");
+            //target = removeValue(head, target);
+            if (target == 0)
+            {
+              break;
+            }
+            else
+            {
+              printf("Valor removido com sucesso.\n");
+            }
             break;
         case 7:
-            printInOrder();
+            printInOrder(head);
             break;
         case 8:
-            printPreOrder();
+            printPreOrder(head);
             break;
         case 9:
-            printPostOrder();
+            printPostOrder(head);
             break;
         case 10:
             balanceTree();
@@ -82,55 +116,26 @@ int main()
             printf("\nFechando o programa.\n\n");
             break;
         default:
-            printf("\nEntrada inválida.\n\n");
+            printf("\nEntrada inválida.\n");
             break;
         }
     } while (escolha != 11);
     return 0;
 }
 
-void printTree(struct node *node)
-{
-    if (node == NULL)
-        return;
-    printTree(node->left);
-    printf("%d ", node->data);
-    printTree(node->right);
-}
-
-struct node *newNode(int data)
-{
-    struct node *node = (struct node *)malloc(sizeof(struct node));
-    node->data = data;
-    node->left = NULL;
-    node->right = NULL;
-
-    return (node);
-}
-
-struct node *build123a()
-{
-    struct node *root = newNode(2);
-    struct node *lChild = newNode(1);
-    struct node *rChild = newNode(3);
-    root->left = lChild;
-    root->right = rChild;
-
-    return (root);
-}
-
-struct node *loadTreeFromFile()
+struct node *loadTreeFromFile(char *fileName)
 {
     struct node *head = NULL;
     int aux;
-    char fileName[10];
     FILE *fp;
-    printf("\nInsira o nome do arquivo: ");
-    fscanf(stdin, "%s", fileName);
+    for (int i = strlen(fileName); fileName[i] != '.'; i--)
+    {
+    }
     fp = fopen(fileName, "r");
     if (fp == NULL)
     {
         printf("\nArquivo não encontrado.\n");
+        return head;
     }
     else
     {
@@ -140,23 +145,44 @@ struct node *loadTreeFromFile()
           insertOnTree(&head, aux);
       }
       fclose(fp);
-      display(head);
     }
+    fclose(fp);
+    return head;
 }
 
-void display(struct node *head)
+void printInOrder(struct node *head)
 {
     if (head != NULL)
     {
-        display(head->left);
+        printInOrder(head->left);
         printf("%d ", head->data);
-        display(head->right);
+        printInOrder(head->right);
+    }
+}
+
+void printPreOrder(struct node *head)
+{
+    if (head != NULL)
+    {
+        printf("%d ", head->data);
+        printPreOrder(head->left);
+        printPreOrder(head->right);
+    }
+}
+
+void printPostOrder(struct node *head)
+{
+    if (head != NULL)
+    {
+        printPostOrder(head->left);
+        printPostOrder(head->right);
+        printf("%d ", head->data);
     }
 }
 
 void insertOnTree(struct node **head, int num)
 {
-    if (*head == NULL)
+    if ((*head) == NULL)
     {
         *head = malloc(sizeof(**head));
         (*head)->data = num;
@@ -179,33 +205,142 @@ void insertOnTree(struct node **head, int num)
 void showTree()
 {
 }
-void isFull()
+
+bool isFull(struct node *head)
 {
+    if(head == NULL)
+    {
+      printf("A árvore não existe\n");
+    }
+    else
+    {
+      if(head->left == NULL && head->right == NULL)
+      {
+        return true;
+      }
+      if((head->left)&&(head->right))
+      {
+        return (isFull(head->left)&&isFull(head->right));
+      }
+      return false;
+    }
 }
 
-void searchValue(struct node *node, int data)
+int searchValue(struct node *head, int target)
 {
+    int height = 1;
+    if (head == NULL)
+    {
+        printf("Valor não encontrado, árvore não existe.\n");
+        return 0;
+    }
+    else if (head->data == target)
+    {
+        printf("Valor do pai: NULO\n");
+        printf("Valor do irmão: NULO\n");
+        return 1;
+    }
+    else if (head->data > target)
+    {
+        if (head->left != NULL)
+        {
+            if (head->left->data == target)
+            {
+                printf("Valor do pai: %d\n", head->data);
+                if (head->right != NULL)
+                {
+                    printf("Valor do irmão: %d\n", head->right->data);
+                }
+                else
+                {
+                    printf("Valor do irmão: NULO\n");
+                }
+                return 2;
+            }
+            else
+            {
+                int aux = height;
+                height += searchValue(head->left, target);
+                if (aux == height)
+                {
+                    return 0;
+                }
+                return height;
+            }
+        }
+        else
+        {
+            printf("Valor não encontrado.\n");
+            return 0;
+        }
+    }
+    else
+    {
+        if (head->right != NULL)
+        {
+            if (head->right->data == target)
+            {
+                printf("Valor do pai: %d\n", head->data);
+                if (head->left != NULL)
+                {
+                    printf("Valor do irmão: %d\n", head->left->data);
+                }
+                else
+                {
+                    printf("Valor do irmão: NULO\n");
+                }
+                return 2;
+            }
+            else
+            {
+                int aux = height;
+                height += searchValue(head->right, target);
+                if (aux == height)
+                {
+                    return 0;
+                }
+                return height;
+            }
+        }
+        else
+        {
+            printf("Valor não encontrado.\n");
+            return 0;
+        }
+    }
 }
 
-void getHeight()
+int getHeight(struct node *head)
 {
+    if(head==NULL)
+    {
+      return 0;
+    }
+    int left = getHeight(head->left);
+    int right = getHeight(head->right);
+    if(left>right)
+    {
+      return left + 1;
+    }
+    else
+    {
+      return right + 1;
+    }
 }
 
-void removeValue()
+/*int removeValue(struct node *head, int target)
 {
-}
-
-void printInOrder()
-{
-}
-
-void printPreOrder()
-{
-}
-
-void printPostOrder()
-{
-}
+  int height = 1;
+  if (head == NULL)
+  {
+      printf("Valor não encontrado, árvore não existe.\n");
+      return 0;
+  }
+  else if(head->left != NULL && head->right == NULL)
+  {
+    if(head)
+  }
+}*/
 
 void balanceTree()
 {
