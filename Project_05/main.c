@@ -3,6 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_HEIGHT 1000
+#define INFINITY (1 << 20)
+
+int lprofile[MAX_HEIGHT];
+int rprofile[MAX_HEIGHT];
+int gap = 3;
+int print_next;
+
 struct node
 {
     int data;
@@ -10,17 +18,39 @@ struct node
     struct node *right;
 };
 
+struct asciinode
+{
+    int edge_length;
+    int height;
+    int lablen;
+    int parent_dir;
+    char label[11];
+    struct asciinode *left;
+    struct asciinode *right;
+};
+
+//Funções principais.
 struct node *loadTreeFromFile(char *);
-void insertOnTree(struct node **, int);
-void showTree();
+void showTree(struct node *);
+void removeValue();
+void printInOrder(struct node *);
+void printPreOrder(struct node *);
+void printPostOrder(struct node *);
+void balanceTree();
 bool isFull(struct node *);
 int searchValue(struct node *, int);
 int getHeight(struct node *);
-//int removeValue(struct node *, int);
-void printPreOrder(struct node *);
-void printInOrder(struct node *);
-void printPostOrder(struct node *);
-void balanceTree();
+
+//Funções auxiliares.
+struct asciinode *build_ascii_tree(struct node *);
+struct asciinode *build_ascii_tree_recursive(struct node *);
+void insertOnTree(struct node **, int);
+void compute_edge_lengths(struct asciinode *);
+void compute_lprofile(struct asciinode *, int, int);
+void compute_rprofile(struct asciinode *, int, int);
+void print_level(struct asciinode *, int, int);
+int MIN(int, int);
+int MAX(int, int);
 
 int main()
 {
@@ -29,11 +59,11 @@ int main()
     int escolha;
     int height = 0;
     bool fullCheck;
-    char fileName[10];
+    char fileName[100];
     do
     {
-        printf("\nFunções Disponíveis:\n");
-        printf("1. Carregar árvore de arquivo.\n");
+        printf("\nFunções disponíveis:\n\n");
+        printf("1. Carregar árvore a partir de arquivo.\n");
         printf("2. Mostrar árvore.\n");
         printf("3. Mostrar se a árvore é cheia.\n");
         printf("4. Buscar valor na árvore.\n");
@@ -44,7 +74,7 @@ int main()
         printf("9. Mostrar árvore post order.\n");
         printf("10. Balancear árvore.\n");
         printf("11. Sair.\n");
-        printf("Entrada: ");
+        printf("\nEntrada: ");
         scanf("%d", &escolha);
         switch (escolha)
         {
@@ -52,20 +82,24 @@ int main()
             printf("\nInsira o nome do arquivo: ");
             fscanf(stdin, "%s", fileName);
             head = loadTreeFromFile(fileName);
-            printf("%d\n",head->data);
             break;
         case 2:
-            showTree();
+            printf("\n");
+            showTree(head);
             break;
         case 3:
             fullCheck = isFull(head);
-            if(fullCheck == true)
+            if (head == NULL)
             {
-              printf("A árvore é cheia.\n\n");
+                break;
             }
-            else if(fullCheck == false)
+            if (fullCheck == true)
             {
-              printf("A árvore não é cheia\n\n");
+                printf("\nA árvore é cheia.\n");
+            }
+            else
+            {
+                printf("\nA árvore não é cheia.\n");
             }
             break;
         case 4:
@@ -83,31 +117,38 @@ int main()
             }
             break;
         case 5:
+            printf("\n");
             height = getHeight(head);
-            printf("%d\n",height);
+            printf("%d\n", height);
             break;
         case 6:
             printf("\nDigite o valor a ser removido: ");
-            scanf("%d\n",&target);
+            scanf("%d\n", &target);
             printf("\n");
             //target = removeValue(head, target);
             if (target == 0)
             {
-              break;
+                break;
             }
             else
             {
-              printf("Valor removido com sucesso.\n");
+                printf("Valor removido com sucesso.\n");
             }
             break;
         case 7:
+            printf("\n");
             printInOrder(head);
+            printf("\n");
             break;
         case 8:
+            printf("\n");
             printPreOrder(head);
+            printf("\n");
             break;
         case 9:
+            printf("\n");
             printPostOrder(head);
+            printf("\n");
             break;
         case 10:
             balanceTree();
@@ -125,104 +166,83 @@ int main()
 
 struct node *loadTreeFromFile(char *fileName)
 {
+    if (strstr(fileName, ".txt") == NULL)
+    {
+        strcat(fileName, ".txt");
+    }
     struct node *head = NULL;
     int aux;
     FILE *fp;
-    for (int i = strlen(fileName); fileName[i] != '.'; i--)
-    {
-    }
-    fp = fopen(fileName, "r");
+    char file[100] = "trees/";
+    strcat(file, fileName);
+    fp = fopen(file, "r");
     if (fp == NULL)
     {
         printf("\nArquivo não encontrado.\n");
-        return head;
+        return NULL;
     }
     else
     {
-      while (!feof(fp))
-      {
-          fscanf(fp, "%d", &aux);
-          insertOnTree(&head, aux);
-      }
-      fclose(fp);
+        while (!feof(fp))
+        {
+            fscanf(fp, "%d", &aux);
+            insertOnTree(&head, aux);
+        }
     }
     fclose(fp);
+    printf("\nÁrvore carregada.\n");
     return head;
 }
 
-void printInOrder(struct node *head)
+void showTree(struct node *head)
 {
-    if (head != NULL)
+    struct asciinode *proot;
+    int xmin, i;
+    if (head == NULL)
     {
-        printInOrder(head->left);
-        printf("%d ", head->data);
-        printInOrder(head->right);
+        return;
     }
-}
-
-void printPreOrder(struct node *head)
-{
-    if (head != NULL)
+    proot = build_ascii_tree(head);
+    compute_edge_lengths(proot);
+    for (i = 0; i < proot->height && i < MAX_HEIGHT; i++)
     {
-        printf("%d ", head->data);
-        printPreOrder(head->left);
-        printPreOrder(head->right);
+        lprofile[i] = INFINITY;
     }
-}
-
-void printPostOrder(struct node *head)
-{
-    if (head != NULL)
+    compute_lprofile(proot, 0, 0);
+    xmin = 0;
+    for (i = 0; i < proot->height && i < MAX_HEIGHT; i++)
     {
-        printPostOrder(head->left);
-        printPostOrder(head->right);
-        printf("%d ", head->data);
+        xmin = MIN(xmin, lprofile[i]);
     }
-}
-
-void insertOnTree(struct node **head, int num)
-{
-    if ((*head) == NULL)
+    for (i = 0; i < proot->height; i++)
     {
-        *head = malloc(sizeof(**head));
-        (*head)->data = num;
-        (*head)->left = NULL;
-        (*head)->right = NULL;
+        print_next = 0;
+        print_level(proot, -xmin, i);
+        printf("\n");
     }
-    else
+    if (proot->height >= MAX_HEIGHT)
     {
-        if (num < (*head)->data)
-        {
-            insertOnTree(&(*head)->left, num);
-        }
-        if (num > (*head)->data)
-        {
-            insertOnTree(&(*head)->right, num);
-        }
+        printf("erro\n");
     }
-}
-
-void showTree()
-{
 }
 
 bool isFull(struct node *head)
 {
-    if(head == NULL)
+    if (head == NULL)
     {
-      printf("A árvore não existe\n");
+        printf("\nÁrvore não existe.\n");
     }
     else
     {
-      if(head->left == NULL && head->right == NULL)
-      {
-        return true;
-      }
-      if((head->left)&&(head->right))
-      {
-        return (isFull(head->left)&&isFull(head->right));
-      }
-      return false;
+        if (head->left == NULL && head->right == NULL)
+        {
+            return true;
+        }
+        if ((head->left) && (head->right))
+        {
+            return (isFull(head->left) && isFull(head->right));
+        }
+        return false;
     }
 }
 
@@ -312,36 +332,291 @@ int searchValue(struct node *head, int target)
 
 int getHeight(struct node *head)
 {
-    if(head==NULL)
+    if (head == NULL)
     {
-      return 0;
+        return 0;
     }
     int left = getHeight(head->left);
     int right = getHeight(head->right);
-    if(left>right)
+    if (left > right)
     {
-      return left + 1;
+        return left + 1;
     }
     else
     {
-      return right + 1;
+        return right + 1;
     }
 }
 
-/*int removeValue(struct node *head, int target)
+// int removeValue(struct node *head, int target)
+// {
+//   int height = 1;
+//   if (head == NULL)
+//   {
+//       printf("Valor não encontrado, árvore não existe.\n");
+//       return 0;
+//   }
+//   else if(head->left != NULL && head->right == NULL)
+//   {
+//     if(head)
+//   }
+// }
+
+void printInOrder(struct node *head)
 {
-  int height = 1;
-  if (head == NULL)
-  {
-      printf("Valor não encontrado, árvore não existe.\n");
-      return 0;
-  }
-  else if(head->left != NULL && head->right == NULL)
-  {
-    if(head)
-  }
-}*/
+    if (head != NULL)
+    {
+        printInOrder(head->left);
+        printf("%d ", head->data);
+        printInOrder(head->right);
+    }
+}
+
+void printPreOrder(struct node *head)
+{
+    if (head != NULL)
+    {
+        printf("%d ", head->data);
+        printPreOrder(head->left);
+        printPreOrder(head->right);
+    }
+}
+
+void printPostOrder(struct node *head)
+{
+    if (head != NULL)
+    {
+        printPostOrder(head->left);
+        printPostOrder(head->right);
+        printf("%d ", head->data);
+    }
+}
 
 void balanceTree()
 {
+}
+
+//Daqui em diante, somente funções auxiliares.
+
+void insertOnTree(struct node **head, int num)
+{
+    if ((*head) == NULL)
+    {
+        *head = malloc(sizeof(**head));
+        (*head)->data = num;
+        (*head)->left = NULL;
+        (*head)->right = NULL;
+    }
+    else
+    {
+        if (num < (*head)->data)
+        {
+            insertOnTree(&(*head)->left, num);
+        }
+        if (num > (*head)->data)
+        {
+            insertOnTree(&(*head)->right, num);
+        }
+    }
+}
+
+int MIN(int X, int Y)
+{
+    return ((X) < (Y)) ? (X) : (Y);
+}
+
+int MAX(int X, int Y)
+{
+    return ((X) > (Y)) ? (X) : (Y);
+}
+
+void print_level(struct asciinode *node, int x, int level)
+{
+    int i, isleft;
+    if (node == NULL)
+        return;
+    isleft = (node->parent_dir == -1);
+    if (level == 0)
+    {
+        for (i = 0; i < (x - print_next - ((node->lablen - isleft) / 2)); i++)
+        {
+            printf(" ");
+        }
+        print_next += i;
+        printf("%s", node->label);
+        print_next += node->lablen;
+    }
+    else if (node->edge_length >= level)
+    {
+        if (node->left != NULL)
+        {
+            for (i = 0; i < (x - print_next - (level)); i++)
+            {
+                printf(" ");
+            }
+            print_next += i;
+            printf("/");
+            print_next++;
+        }
+        if (node->right != NULL)
+        {
+            for (i = 0; i < (x - print_next + (level)); i++)
+            {
+                printf(" ");
+            }
+            print_next += i;
+            printf("\\");
+            print_next++;
+        }
+    }
+    else
+    {
+        print_level(node->left, x - node->edge_length - 1, level - node->edge_length - 1);
+        print_level(node->right, x + node->edge_length + 1, level - node->edge_length - 1);
+    }
+}
+
+struct asciinode *build_ascii_tree(struct node *head)
+{
+    struct asciinode *node;
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    node = build_ascii_tree_recursive(head);
+    node->parent_dir = 0;
+    return node;
+}
+
+struct asciinode *build_ascii_tree_recursive(struct node *head)
+{
+    struct asciinode *node;
+    if (head == NULL)
+    {
+        return NULL;
+    }
+    node = malloc(sizeof(struct asciinode));
+    node->left = build_ascii_tree_recursive(head->left);
+    node->right = build_ascii_tree_recursive(head->right);
+    if (node->left != NULL)
+    {
+        node->left->parent_dir = -1;
+    }
+    if (node->right != NULL)
+    {
+        node->right->parent_dir = 1;
+    }
+
+    sprintf(node->label, "%d", head->data);
+    node->lablen = strlen(node->label);
+
+    return node;
+}
+
+void compute_edge_lengths(struct asciinode *node)
+{
+    int h, hmin, i, delta;
+    if (node == NULL)
+        return;
+    compute_edge_lengths(node->left);
+    compute_edge_lengths(node->right);
+
+    if (node->right == NULL && node->left == NULL)
+    {
+        node->edge_length = 0;
+    }
+    else
+    {
+        if (node->left != NULL)
+        {
+            for (i = 0; i < node->left->height && i < MAX_HEIGHT; i++)
+            {
+                rprofile[i] = -INFINITY;
+            }
+            compute_rprofile(node->left, 0, 0);
+            hmin = node->left->height;
+        }
+        else
+        {
+            hmin = 0;
+        }
+        if (node->right != NULL)
+        {
+            for (i = 0; i < node->right->height && i < MAX_HEIGHT; i++)
+            {
+                lprofile[i] = INFINITY;
+            }
+            compute_lprofile(node->right, 0, 0);
+            hmin = MIN(node->right->height, hmin);
+        }
+        else
+        {
+            hmin = 0;
+        }
+        delta = 4;
+        for (i = 0; i < hmin; i++)
+        {
+            delta = MAX(delta, gap + 1 + rprofile[i] - lprofile[i]);
+        }
+
+        if (((node->left != NULL && node->left->height == 1) ||
+             (node->right != NULL && node->right->height == 1)) &&
+            delta > 4)
+        {
+            delta--;
+        }
+
+        node->edge_length = ((delta + 1) / 2) - 1;
+    }
+
+    h = 1;
+    if (node->left != NULL)
+    {
+        h = MAX(node->left->height + node->edge_length + 1, h);
+    }
+    if (node->right != NULL)
+    {
+        h = MAX(node->right->height + node->edge_length + 1, h);
+    }
+    node->height = h;
+}
+
+void compute_lprofile(struct asciinode *node, int x, int y)
+{
+    int i, isleft;
+    if (node == NULL)
+    {
+        return;
+    }
+    isleft = (node->parent_dir == -1);
+    lprofile[y] = MIN(lprofile[y], x - ((node->lablen - isleft) / 2));
+    if (node->left != NULL)
+    {
+        for (i = 1; i <= node->edge_length && y + i < MAX_HEIGHT; i++)
+        {
+            lprofile[y + i] = MIN(lprofile[y + i], x - i);
+        }
+    }
+    compute_lprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
+    compute_lprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
+}
+
+void compute_rprofile(struct asciinode *node, int x, int y)
+{
+    int i, notleft;
+    if (node == NULL)
+    {
+        return;
+    }
+    notleft = (node->parent_dir != -1);
+    rprofile[y] = MAX(rprofile[y], x + ((node->lablen - notleft) / 2));
+    if (node->right != NULL)
+    {
+        for (i = 1; i <= node->edge_length && y + i < MAX_HEIGHT; i++)
+        {
+            rprofile[y + i] = MAX(rprofile[y + i], x + i);
+        }
+    }
+    compute_rprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
+    compute_rprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
 }
