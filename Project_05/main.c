@@ -49,6 +49,7 @@ void compute_edge_lengths(struct asciinode *);
 void compute_lprofile(struct asciinode *, int, int);
 void compute_rprofile(struct asciinode *, int, int);
 void print_level(struct asciinode *, int, int);
+bool isBalanced(struct node *);
 int MIN(int, int);
 int MAX(int, int);
 
@@ -132,7 +133,7 @@ int main()
             }
             else
             {
-                printf("Valor removido com sucesso.\n");
+                printf("\nValor removido com sucesso.\n");
             }
             break;
         case 7:
@@ -151,8 +152,25 @@ int main()
             printf("\n");
             break;
         case 10:
-            balanceTree();
-            break;
+            if (head == NULL)
+            {
+                printf("\nÁrvore não existe.\n");
+                break;
+            }
+            else
+            {
+                if (isBalanced(head))
+                {
+                    printf("\nÁrvore já está balanceada.\n");
+                    break;
+                }
+                else
+                {
+                    balanceTree();
+                    printf("\nÁrvore foi balanceada.\n");
+                    break;
+                }
+            }
         case 11:
             printf("\nFechando o programa.\n\n");
             break;
@@ -397,6 +415,23 @@ void balanceTree()
 }
 
 //Daqui em diante, somente funções auxiliares.
+
+bool isBalanced(struct node *node)
+{
+    if (node == NULL)
+    {
+        return true;
+    }
+
+    int left_height = getHeight(node->left);
+    int right_height = getHeight(node->right);
+
+    if (abs(left_height - right_height) <= 1 && isBalanced(node->left) && isBalanced(node->right))
+    {
+        return true;
+    }
+    return false;
+}
 
 void insertOnTree(struct node **head, int num)
 {
