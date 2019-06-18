@@ -32,11 +32,11 @@ struct asciinode
 //Funções principais.
 struct node *loadTreeFromFile(char *);
 void showTree(struct node *);
-void removeValue();
+int removeValue(struct node *, int);
 void printInOrder(struct node *);
 void printPreOrder(struct node *);
 void printPostOrder(struct node *);
-void balanceTree();
+void balanceTree(struct node *, struct node *);
 bool isFull(struct node *);
 int searchValue(struct node *, int);
 int getHeight(struct node *);
@@ -44,6 +44,9 @@ int getHeight(struct node *);
 //Funções auxiliares.
 struct asciinode *build_ascii_tree(struct node *);
 struct asciinode *build_ascii_tree_recursive(struct node *);
+struct node *searchMinChildValue(struct node *);
+struct node *removeFromTree(struct node *, int);
+void balanceTreeAfterBackbone(struct node *, int);
 void insertOnTree(struct node **, int);
 void compute_edge_lengths(struct asciinode *);
 void compute_lprofile(struct asciinode *, int, int);
@@ -56,7 +59,9 @@ int MAX(int, int);
 int main()
 {
     struct node *head = NULL;
+    struct node *temp = NULL;
     int target;
+    int target1;
     int escolha;
     int height = 0;
     bool fullCheck;
@@ -124,16 +129,16 @@ int main()
             break;
         case 6:
             printf("\nDigite o valor a ser removido: ");
-            scanf("%d\n", &target);
+            scanf("%d", &target1);
             printf("\n");
-            //target = removeValue(head, target);
-            if (target == 0)
+            target1 = removeValue(head, target1);
+            if (target1 == 0)
             {
                 break;
             }
             else
             {
-                printf("\nValor removido com sucesso.\n");
+              printf("Valor removido com sucesso.\n");
             }
             break;
         case 7:
@@ -166,7 +171,7 @@ int main()
                 }
                 else
                 {
-                    balanceTree();
+                    balanceTree(head, temp);
                     printf("\nÁrvore foi balanceada.\n");
                     break;
                 }
@@ -241,6 +246,20 @@ void showTree(struct node *head)
     if (proot->height >= MAX_HEIGHT)
     {
         printf("erro\n");
+    }
+}
+
+int removeValue(struct node *head, int target)
+{
+    if(head == NULL)
+    {
+      printf("\nÁrvore não existe.\n");
+      return 0;
+    }
+    else
+    {
+      head = removeFromTree(head, target);
+      return 1;
     }
 }
 
@@ -366,20 +385,6 @@ int getHeight(struct node *head)
     }
 }
 
-// int removeValue(struct node *head, int target)
-// {
-//   int height = 1;
-//   if (head == NULL)
-//   {
-//       printf("Valor não encontrado, árvore não existe.\n");
-//       return 0;
-//   }
-//   else if(head->left != NULL && head->right == NULL)
-//   {
-//     if(head)
-//   }
-// }
-
 void printInOrder(struct node *head)
 {
     if (head != NULL)
@@ -410,11 +415,101 @@ void printPostOrder(struct node *head)
     }
 }
 
-void balanceTree()
+void balanceTree(struct node *head, struct node *avo)
 {
+    struct node *child = NULL;
+    if(head == NULL)
+    {
+      free(child);
+      int i = 0;
+      balanceTreeAfterBackbone(head, i);
+    }
+    else if(head->left == NULL)
+    {
+      avo = head;
+      balanceTree(head->right, avo);
+    }
+    else if(head->left != NULL)
+    {
+          printf("b\n");
+      if(avo!=NULL)
+      {
+        child = head->left;
+        if(avo->left == head)
+        {
+          avo->left = child;
+        }
+        else
+        {
+          avo->right = child;
+        }
+      }
+      printf("b\n");
+      head->left = child->right;
+      child->right = head;
+      printf("b\n");
+      balanceTree(head->right, head);
+    }
 }
 
 //Daqui em diante, somente funções auxiliares.
+
+void balanceTreeAfterBackbone(struct node *head, int i)
+{
+    struct node *pai;
+    struct node *avo;
+    printf("a\n");
+    if(i==0)
+    {
+      pai = head;
+      head = head->right;
+      if(avo!=NULL)
+      {
+        if(avo->left)
+        {
+          avo->left = head;
+        }
+        else
+        {
+          avo->right = head;
+        }
+      }
+      pai->right = head->left;
+      head->left = pai;
+      i++;
+      free(avo);
+      free(pai);
+      balanceTreeAfterBackbone(head, i);
+    }
+    else if(i!=0)
+    {
+      avo = head;
+      head = head->right;
+      pai = head;
+      head = head->right;
+      if(avo!=NULL)
+      {
+        if(avo->left)
+        {
+          avo->left = head;
+        }
+        else
+        {
+          avo->right = head;
+        }
+      }
+      pai->right = head->left;
+      head->left = pai;
+      free(avo);
+      free(pai);
+      balanceTreeAfterBackbone(head, i);
+    }
+    else
+    {
+      free(pai);
+      free(avo);
+    }
+}
 
 bool isBalanced(struct node *node)
 {
@@ -654,4 +749,49 @@ void compute_rprofile(struct asciinode *node, int x, int y)
     }
     compute_rprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
     compute_rprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
+}
+
+struct node *removeFromTree(struct node *head, int target)
+{
+    //menor que a base
+    if(target < head->data)
+    {
+      head->left = removeFromTree(head->left, target);
+    }
+    //maior que a base
+    else if(target > head->data)
+    {
+      head->right = removeFromTree(head->right, target);
+    }
+    else
+    {
+      //apenas um filho ou sem filhos
+      if(head->left == NULL)
+      {
+        struct node *temp = head->right;
+        free(temp);
+        return temp;
+      }
+      else if(head->right == NULL)
+      {
+        struct node *temp = head->left;
+        free(temp);
+        return temp;
+      }
+      //dois filhos
+      struct node *temp = searchMinChildValue(head->right);
+      head->data = temp->data;
+      head->right = removeFromTree(head->right, temp->data);
+    }
+    return head;
+}
+
+struct node *searchMinChildValue(struct node *head)
+{
+    struct node *current = head;
+    while(current && current->left != NULL)
+    {
+      current = current->left;
+    }
+    return current;
 }
