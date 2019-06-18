@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_HEIGHT 1000
 #define INFINITY (1 << 20)
@@ -415,6 +416,85 @@ void balanceTree()
 }
 
 //Daqui em diante, somente funções auxiliares.
+
+bool leftRotate(struct node *node)
+{
+    if (node->right == NULL)
+    {
+        struct node *right = node->right;
+        node->right = right->right;
+        right->right = right->left;
+        right->left = node->left;
+        node->left = right;
+
+        int temp = node->data;
+        node->data = right->data;
+        right->data = temp;
+    }
+    return node;
+}
+
+struct node *rightRotate(struct node *node)
+{
+    if (node->left == NULL)
+    {
+        struct node *left = node->left;
+        node->left = left->left;
+        left->left = left->right;
+        left->right = node->right;
+        node->right = left;
+
+        int temp = node->data;
+        node->data = left->data;
+        left->data = temp;
+    }
+    return node;
+}
+
+struct node *createBackBone(struct node *node)
+{
+    while (node->left != NULL)
+    {
+        node = rightRotate(node);
+    }
+    if (node->right != NULL)
+    {
+        node->right = createBackBone(node->right);
+    }
+    return node;
+}
+
+int getNodesCount(struct node *node)
+{
+    if (node == NULL)
+    {
+        return 0;
+    }
+    int i;
+    for (i = 1; node->right != NULL; i++)
+    {
+        node = node->right;
+    }
+    return i;
+}
+
+struct node *balanceBackBone(struct node *node, int nodeCount)
+{
+    int times = log2(nodeCount);
+    struct node *newNode = node;
+    for (int i = 0; i < times; i++)
+    {
+        newNode = leftRotate(newNode);
+        node = newNode->right;
+        for (int j = 0; j < nodeCount / 2 - 1; j++)
+        {
+            node = leftRotate(node);
+            node = node->right;
+        }
+        nodeCount >>= 1;
+    }
+    return newNode;
+}
 
 bool isBalanced(struct node *node)
 {
