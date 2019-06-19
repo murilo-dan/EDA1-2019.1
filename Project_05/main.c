@@ -5,7 +5,7 @@
 #include <math.h>
 
 #define MAX_HEIGHT 1000
-#define INFINITY (1 << 20)
+#define INFINITO (1 << 20)
 
 int lprofile[MAX_HEIGHT];
 int rprofile[MAX_HEIGHT];
@@ -33,11 +33,11 @@ struct asciinode
 //Funções principais.
 struct node *loadTreeFromFile(char *);
 void showTree(struct node *);
-void removeValue();
+int removeValue(struct node *, int);
 void printInOrder(struct node *);
 void printPreOrder(struct node *);
 void printPostOrder(struct node *);
-void balanceTree();
+void balanceTree(struct node *);
 bool isFull(struct node *);
 int searchValue(struct node *, int);
 int getHeight(struct node *);
@@ -45,11 +45,16 @@ int getHeight(struct node *);
 //Funções auxiliares.
 struct asciinode *build_ascii_tree(struct node *);
 struct asciinode *build_ascii_tree_recursive(struct node *);
+struct node *searchMinChildValue(struct node *);
+struct node *removeFromTree(struct node *, int);
+void balanceTreeAfterBackbone(struct node *, int);
 void insertOnTree(struct node **, int);
 void compute_edge_lengths(struct asciinode *);
 void compute_lprofile(struct asciinode *, int, int);
 void compute_rprofile(struct asciinode *, int, int);
 void print_level(struct asciinode *, int, int);
+void rightRotate(struct node *);
+void leftRotate(struct node *);
 bool isBalanced(struct node *);
 int MIN(int, int);
 int MAX(int, int);
@@ -57,7 +62,9 @@ int MAX(int, int);
 int main()
 {
     struct node *head = NULL;
+    struct node *temp = NULL;
     int target;
+    int target1;
     int escolha;
     int height = 0;
     bool fullCheck;
@@ -125,16 +132,16 @@ int main()
             break;
         case 6:
             printf("\nDigite o valor a ser removido: ");
-            scanf("%d\n", &target);
+            scanf("%d", &target1);
             printf("\n");
-            //target = removeValue(head, target);
-            if (target == 0)
+            target1 = removeValue(head, target1);
+            if (target1 == 0)
             {
                 break;
             }
             else
             {
-                printf("\nValor removido com sucesso.\n");
+                printf("Valor removido com sucesso.\n");
             }
             break;
         case 7:
@@ -167,7 +174,7 @@ int main()
                 }
                 else
                 {
-                    balanceTree();
+                    balanceTree(head);
                     printf("\nÁrvore foi balanceada.\n");
                     break;
                 }
@@ -225,7 +232,7 @@ void showTree(struct node *head)
     compute_edge_lengths(proot);
     for (i = 0; i < proot->height && i < MAX_HEIGHT; i++)
     {
-        lprofile[i] = INFINITY;
+        lprofile[i] = INFINITO;
     }
     compute_lprofile(proot, 0, 0);
     xmin = 0;
@@ -242,6 +249,20 @@ void showTree(struct node *head)
     if (proot->height >= MAX_HEIGHT)
     {
         printf("erro\n");
+    }
+}
+
+int removeValue(struct node *head, int target)
+{
+    if (head == NULL)
+    {
+        printf("\nÁrvore não existe.\n");
+        return 0;
+    }
+    else
+    {
+        head = removeFromTree(head, target);
+        return 1;
     }
 }
 
@@ -367,20 +388,6 @@ int getHeight(struct node *head)
     }
 }
 
-// int removeValue(struct node *head, int target)
-// {
-//   int height = 1;
-//   if (head == NULL)
-//   {
-//       printf("Valor não encontrado, árvore não existe.\n");
-//       return 0;
-//   }
-//   else if(head->left != NULL && head->right == NULL)
-//   {
-//     if(head)
-//   }
-// }
-
 void printInOrder(struct node *head)
 {
     if (head != NULL)
@@ -411,89 +418,98 @@ void printPostOrder(struct node *head)
     }
 }
 
-void balanceTree()
+void balanceTree(struct node *head)
 {
+    struct node *current = head;
+    int nodeCount = 0;
+
+    while (current != NULL)
+    {
+        while (current->left != NULL)
+        {
+            rightRotate(current);
+        }
+        current = current->right;
+        nodeCount += 1;
+    }
+
+    int expected = ceil(log2(nodeCount)) - nodeCount;
+    struct node *aux = head;
+
+    for (int i = 0; i < expected; i++)
+    {
+        if (i == 0)
+        {
+            leftRotate(aux);
+            aux = head;
+        }
+        else
+        {
+            leftRotate(aux->right);
+            aux = aux->right;
+        }
+    }
+
+    while (nodeCount > 1)
+    {
+        nodeCount /= 2;
+        leftRotate(head);
+        aux = head;
+
+        for (int i = 0; i < nodeCount - 1; i++)
+        {
+            leftRotate(aux->right);
+            aux = aux->right;
+        }
+    }
 }
 
 //Daqui em diante, somente funções auxiliares.
 
-bool leftRotate(struct node *node)
-{
-    if (node->right == NULL)
-    {
-        struct node *right = node->right;
-        node->right = right->right;
-        right->right = right->left;
-        right->left = node->left;
-        node->left = right;
-
-        int temp = node->data;
-        node->data = right->data;
-        right->data = temp;
-    }
-    return node;
-}
-
-struct node *rightRotate(struct node *node)
-{
-    if (node->left == NULL)
-    {
-        struct node *left = node->left;
-        node->left = left->left;
-        left->left = left->right;
-        left->right = node->right;
-        node->right = left;
-
-        int temp = node->data;
-        node->data = left->data;
-        left->data = temp;
-    }
-    return node;
-}
-
-struct node *createBackBone(struct node *node)
-{
-    while (node->left != NULL)
-    {
-        node = rightRotate(node);
-    }
-    if (node->right != NULL)
-    {
-        node->right = createBackBone(node->right);
-    }
-    return node;
-}
-
-int getNodesCount(struct node *node)
+void rightRotate(struct node *node)
 {
     if (node == NULL)
     {
-        return 0;
+        return;
     }
-    int i;
-    for (i = 1; node->right != NULL; i++)
+    if (node->left == NULL)
     {
-        node = node->right;
+        return;
     }
-    return i;
+    int temp = node->data;
+    node->data = node->left->data;
+    node->left->data = temp;
+
+    struct node *aux = node->left;
+    node->left = aux->left;
+    aux->left = aux->right;
+    aux->right = node->right;
+    node->right = aux;
+
+    return;
 }
 
-struct node *balanceBackBone(struct node *node, int nodeCount)
+void leftRotate(struct node *node)
 {
-    int times = log2(nodeCount);
-    struct node *newNode = node;
-    for (int i = 0; i < times; i++)
+    if (node == NULL)
     {
-        newNode = leftRotate(newNode);
-        node = newNode->right;
-        for (int j = 0; j < nodeCount / 2 - 1; j++)
-        {
-            node = leftRotate(node);
-            node = node->right;
-        }
-        nodeCount >>= 1;
+        return;
     }
-    return newNode;
+    if (node->right == NULL)
+    {
+        return;
+    }
+    int temp = node->data;
+    node->data = node->right->data;
+    node->right->data = temp;
+
+    struct node *aux = node->right;
+    node->right = aux->right;
+    aux->right = aux->left;
+    aux->left = node->left;
+    node->left = aux;
+
+    return;
 }
 
 bool isBalanced(struct node *node)
@@ -646,7 +662,7 @@ void compute_edge_lengths(struct asciinode *node)
         {
             for (i = 0; i < node->left->height && i < MAX_HEIGHT; i++)
             {
-                rprofile[i] = -INFINITY;
+                rprofile[i] = -INFINITO;
             }
             compute_rprofile(node->left, 0, 0);
             hmin = node->left->height;
@@ -659,7 +675,7 @@ void compute_edge_lengths(struct asciinode *node)
         {
             for (i = 0; i < node->right->height && i < MAX_HEIGHT; i++)
             {
-                lprofile[i] = INFINITY;
+                lprofile[i] = INFINITO;
             }
             compute_lprofile(node->right, 0, 0);
             hmin = MIN(node->right->height, hmin);
@@ -734,4 +750,49 @@ void compute_rprofile(struct asciinode *node, int x, int y)
     }
     compute_rprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
     compute_rprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
+}
+
+struct node *removeFromTree(struct node *head, int target)
+{
+    //menor que a base
+    if (target < head->data)
+    {
+        head->left = removeFromTree(head->left, target);
+    }
+    //maior que a base
+    else if (target > head->data)
+    {
+        head->right = removeFromTree(head->right, target);
+    }
+    else
+    {
+        //apenas um filho ou sem filhos
+        if (head->left == NULL)
+        {
+            struct node *temp = head->right;
+            free(temp);
+            return temp;
+        }
+        else if (head->right == NULL)
+        {
+            struct node *temp = head->left;
+            free(temp);
+            return temp;
+        }
+        //dois filhos
+        struct node *temp = searchMinChildValue(head->right);
+        head->data = temp->data;
+        head->right = removeFromTree(head->right, temp->data);
+    }
+    return head;
+}
+
+struct node *searchMinChildValue(struct node *head)
+{
+    struct node *current = head;
+    while (current && current->left != NULL)
+    {
+        current = current->left;
+    }
+    return current;
 }
