@@ -1,17 +1,27 @@
+/*
+Estrutura de Dados 1 - Turma A/2019.1
+Murilo Loiola Dantas - 17/0163571
+Gabriel Alves Hussein - 17/0103200
+*/
+
+//Bibliotecas utilizadas.
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
+//Definição de um limite para a altura da árvore.
+//Um valor muito alto pode comprometer o funcionamento adequado da função de imprimir a BST no formato de árvore.
 #define MAX_HEIGHT 1000
-#define INFINITO (1 << 20)
 
+//Variáveis globais utilizadas na impressão da árvore.
 int lprofile[MAX_HEIGHT];
 int rprofile[MAX_HEIGHT];
 int gap = 3;
 int print_next;
 
+//Declaração da struct de um nódulo da árvore.
 struct node
 {
     int data;
@@ -19,6 +29,7 @@ struct node
     struct node *right;
 };
 
+//Declaração da struct necessária para imprimir a árvore.
 struct asciinode
 {
     int edge_length;
@@ -30,19 +41,19 @@ struct asciinode
     struct asciinode *right;
 };
 
-//Funções principais.
+//Declaração do protótipo das funções principais.
 struct node *loadTreeFromFile(char *);
 void showTree(struct node *);
-int removeValue(struct node *, int);
 void printInOrder(struct node *);
 void printPreOrder(struct node *);
 void printPostOrder(struct node *);
 void balanceTree(struct node *);
 bool isFull(struct node *);
+int removeValue(struct node *, int);
 int searchValue(struct node *, int);
 int getHeight(struct node *);
 
-//Funções auxiliares.
+//Declaração do protótipo das funções auxiliares.
 struct asciinode *build_ascii_tree(struct node *);
 struct asciinode *build_ascii_tree_recursive(struct node *);
 struct node *searchMinChildValue(struct node *);
@@ -55,20 +66,23 @@ void compute_rprofile(struct asciinode *, int, int);
 void print_level(struct asciinode *, int, int);
 void rightRotate(struct node *);
 void leftRotate(struct node *);
+void freeTree(struct node *);
 bool isBalanced(struct node *);
-int MIN(int, int);
-int MAX(int, int);
+int min(int, int);
+int max(int, int);
 
+//Início da função principal.
 int main()
 {
     struct node *head = NULL;
     struct node *temp = NULL;
     int target;
-    int target1;
     int escolha;
     int height = 0;
     bool fullCheck;
     char fileName[100];
+
+    //Loop que define o menu do programa.
     do
     {
         printf("\nFunções disponíveis:\n\n");
@@ -88,6 +102,10 @@ int main()
         switch (escolha)
         {
         case 1:
+            if (head != NULL)
+            {
+                freeTree(head);
+            }
             printf("\nInsira o nome do arquivo: ");
             fscanf(stdin, "%s", fileName);
             head = loadTreeFromFile(fileName);
@@ -132,10 +150,10 @@ int main()
             break;
         case 6:
             printf("\nDigite o valor a ser removido: ");
-            scanf("%d", &target1);
+            scanf("%d", &target);
             printf("\n");
-            target1 = removeValue(head, target1);
-            if (target1 == 0)
+            target = removeValue(head, target);
+            if (target == 0)
             {
                 break;
             }
@@ -180,6 +198,10 @@ int main()
                 }
             }
         case 11:
+            if (head != NULL)
+            {
+                freeTree(head);
+            }
             printf("\nFechando o programa.\n\n");
             break;
         default:
@@ -190,6 +212,7 @@ int main()
     return 0;
 }
 
+//Função carrega a árvore a partir do arquivo.
 struct node *loadTreeFromFile(char *fileName)
 {
     if (strstr(fileName, ".txt") == NULL)
@@ -220,6 +243,7 @@ struct node *loadTreeFromFile(char *fileName)
     return head;
 }
 
+//Função imprime a BST no formato de árvore.
 void showTree(struct node *head)
 {
     struct asciinode *proot;
@@ -232,13 +256,13 @@ void showTree(struct node *head)
     compute_edge_lengths(proot);
     for (i = 0; i < proot->height && i < MAX_HEIGHT; i++)
     {
-        lprofile[i] = INFINITO;
+        lprofile[i] = (1 << 20);
     }
     compute_lprofile(proot, 0, 0);
     xmin = 0;
     for (i = 0; i < proot->height && i < MAX_HEIGHT; i++)
     {
-        xmin = MIN(xmin, lprofile[i]);
+        xmin = min(xmin, lprofile[i]);
     }
     for (i = 0; i < proot->height; i++)
     {
@@ -252,6 +276,7 @@ void showTree(struct node *head)
     }
 }
 
+//Função remove valor da árvore.
 int removeValue(struct node *head, int target)
 {
     if (head == NULL)
@@ -266,6 +291,7 @@ int removeValue(struct node *head, int target)
     }
 }
 
+//Função checa se a árvore é cheia.
 bool isFull(struct node *head)
 {
     if (head == NULL)
@@ -286,6 +312,7 @@ bool isFull(struct node *head)
     }
 }
 
+//Função busca valor na árvore.
 int searchValue(struct node *head, int target)
 {
     int height = 1;
@@ -370,6 +397,7 @@ int searchValue(struct node *head, int target)
     }
 }
 
+//Função calcula a altura da árvore.
 int getHeight(struct node *head)
 {
     if (head == NULL)
@@ -388,6 +416,7 @@ int getHeight(struct node *head)
     }
 }
 
+//Função imprime a árvore InOrder.
 void printInOrder(struct node *head)
 {
     if (head != NULL)
@@ -398,6 +427,7 @@ void printInOrder(struct node *head)
     }
 }
 
+//Função imprime a árvore PreOrder.
 void printPreOrder(struct node *head)
 {
     if (head != NULL)
@@ -408,6 +438,7 @@ void printPreOrder(struct node *head)
     }
 }
 
+//Função imprime a árvore PostOrder.
 void printPostOrder(struct node *head)
 {
     if (head != NULL)
@@ -418,11 +449,18 @@ void printPostOrder(struct node *head)
     }
 }
 
+//Função de balanceamento da ávore.
+//Foi utilizado o algoritmo de Day-Stout-Warren.
+//Esse algoritmo foi escolhido por alguns motivos:
+//1. Utiliza rotações, como é exigido na proposta de implementação. 
+//2. A árvore gerada é a mais compacta possível: todos os níveis são completamente preenchidos, exceto talvez o último.
+//3. O custo de operação é reduzido conforme o tamanho da árvore.
 void balanceTree(struct node *head)
 {
     struct node *current = head;
     int nodeCount = 0;
 
+    //Gera o backbone.
     while (current != NULL)
     {
         while (current->left != NULL)
@@ -436,6 +474,7 @@ void balanceTree(struct node *head)
     int expected = ceil(log2(nodeCount)) - nodeCount;
     struct node *aux = head;
 
+    //Balanceia o backbone gerado.
     for (int i = 0; i < expected; i++)
     {
         if (i == 0)
@@ -449,7 +488,6 @@ void balanceTree(struct node *head)
             aux = aux->right;
         }
     }
-
     while (nodeCount > 1)
     {
         nodeCount /= 2;
@@ -466,13 +504,14 @@ void balanceTree(struct node *head)
 
 //Daqui em diante, somente funções auxiliares.
 
+//Função de rotação à direita.
 void rightRotate(struct node *node)
 {
     if (node == NULL)
     {
         return;
     }
-    if (node->left == NULL)
+    else if (node->left == NULL)
     {
         return;
     }
@@ -489,13 +528,14 @@ void rightRotate(struct node *node)
     return;
 }
 
+//Função de rotação à esquerda.
 void leftRotate(struct node *node)
 {
     if (node == NULL)
     {
         return;
     }
-    if (node->right == NULL)
+    else if (node->right == NULL)
     {
         return;
     }
@@ -512,6 +552,7 @@ void leftRotate(struct node *node)
     return;
 }
 
+//Função verifica se a árvore é ou não balanceada.
 bool isBalanced(struct node *node)
 {
     if (node == NULL)
@@ -529,6 +570,7 @@ bool isBalanced(struct node *node)
     return false;
 }
 
+//Função insere valor na árvore. Utilizada no carregamento de árvore a partir do arquivo.
 void insertOnTree(struct node **head, int num)
 {
     if ((*head) == NULL)
@@ -551,16 +593,32 @@ void insertOnTree(struct node **head, int num)
     }
 }
 
-int MIN(int X, int Y)
+//Funções auxiliares de mínimo e máximo.
+int min(int x, int y)
 {
-    return ((X) < (Y)) ? (X) : (Y);
+    if (x < y)
+    {
+        return x;
+    }
+    else
+    {
+        return y;
+    }
 }
 
-int MAX(int X, int Y)
+int max(int x, int y)
 {
-    return ((X) > (Y)) ? (X) : (Y);
+    if (x > y)
+    {
+        return x;
+    }
+    else
+    {
+        return y;
+    }
 }
 
+//Função imprime os níveis da árvore utilizando o espaçamento entre nódulos.
 void print_level(struct asciinode *node, int x, int level)
 {
     int i, isleft;
@@ -607,6 +665,7 @@ void print_level(struct asciinode *node, int x, int level)
     }
 }
 
+//Função inicial para a impressão da árvore.
 struct asciinode *build_ascii_tree(struct node *head)
 {
     struct asciinode *node;
@@ -619,6 +678,7 @@ struct asciinode *build_ascii_tree(struct node *head)
     return node;
 }
 
+//Função recursiva que preenche a struct definida com os valores adequados.
 struct asciinode *build_ascii_tree_recursive(struct node *head)
 {
     struct asciinode *node;
@@ -644,6 +704,7 @@ struct asciinode *build_ascii_tree_recursive(struct node *head)
     return node;
 }
 
+//Calcula a "distância" entre os extremos da árvore para definir o espaçamento adequado.
 void compute_edge_lengths(struct asciinode *node)
 {
     int h, hmin, i, delta;
@@ -662,7 +723,7 @@ void compute_edge_lengths(struct asciinode *node)
         {
             for (i = 0; i < node->left->height && i < MAX_HEIGHT; i++)
             {
-                rprofile[i] = -INFINITO;
+                rprofile[i] = -(1 << 20);
             }
             compute_rprofile(node->left, 0, 0);
             hmin = node->left->height;
@@ -675,10 +736,10 @@ void compute_edge_lengths(struct asciinode *node)
         {
             for (i = 0; i < node->right->height && i < MAX_HEIGHT; i++)
             {
-                lprofile[i] = INFINITO;
+                lprofile[i] = (1 << 20);
             }
             compute_lprofile(node->right, 0, 0);
-            hmin = MIN(node->right->height, hmin);
+            hmin = min(node->right->height, hmin);
         }
         else
         {
@@ -687,7 +748,7 @@ void compute_edge_lengths(struct asciinode *node)
         delta = 4;
         for (i = 0; i < hmin; i++)
         {
-            delta = MAX(delta, gap + 1 + rprofile[i] - lprofile[i]);
+            delta = max(delta, gap + 1 + rprofile[i] - lprofile[i]);
         }
 
         if (((node->left != NULL && node->left->height == 1) ||
@@ -703,15 +764,16 @@ void compute_edge_lengths(struct asciinode *node)
     h = 1;
     if (node->left != NULL)
     {
-        h = MAX(node->left->height + node->edge_length + 1, h);
+        h = max(node->left->height + node->edge_length + 1, h);
     }
     if (node->right != NULL)
     {
-        h = MAX(node->right->height + node->edge_length + 1, h);
+        h = max(node->right->height + node->edge_length + 1, h);
     }
     node->height = h;
 }
 
+//Calcula o espaçamento à esquerda.
 void compute_lprofile(struct asciinode *node, int x, int y)
 {
     int i, isleft;
@@ -720,18 +782,19 @@ void compute_lprofile(struct asciinode *node, int x, int y)
         return;
     }
     isleft = (node->parent_dir == -1);
-    lprofile[y] = MIN(lprofile[y], x - ((node->lablen - isleft) / 2));
+    lprofile[y] = min(lprofile[y], x - ((node->lablen - isleft) / 2));
     if (node->left != NULL)
     {
         for (i = 1; i <= node->edge_length && y + i < MAX_HEIGHT; i++)
         {
-            lprofile[y + i] = MIN(lprofile[y + i], x - i);
+            lprofile[y + i] = min(lprofile[y + i], x - i);
         }
     }
     compute_lprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
     compute_lprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
 }
 
+//Calcula o espaçamento à direita.
 void compute_rprofile(struct asciinode *node, int x, int y)
 {
     int i, notleft;
@@ -740,46 +803,48 @@ void compute_rprofile(struct asciinode *node, int x, int y)
         return;
     }
     notleft = (node->parent_dir != -1);
-    rprofile[y] = MAX(rprofile[y], x + ((node->lablen - notleft) / 2));
+    rprofile[y] = max(rprofile[y], x + ((node->lablen - notleft) / 2));
     if (node->right != NULL)
     {
         for (i = 1; i <= node->edge_length && y + i < MAX_HEIGHT; i++)
         {
-            rprofile[y + i] = MAX(rprofile[y + i], x + i);
+            rprofile[y + i] = max(rprofile[y + i], x + i);
         }
     }
     compute_rprofile(node->left, x - node->edge_length - 1, y + node->edge_length + 1);
     compute_rprofile(node->right, x + node->edge_length + 1, y + node->edge_length + 1);
 }
 
+//Remove valor da árvore.
 struct node *removeFromTree(struct node *head, int target)
 {
-    //menor que a base
+    //Caso o valor seja menor que a raíz.
     if (target < head->data)
     {
         head->left = removeFromTree(head->left, target);
     }
-    //maior que a base
+    //Caso o valor seja maior que a raíz.
     else if (target > head->data)
     {
         head->right = removeFromTree(head->right, target);
     }
+    //Caso o valor seja encontrado.
     else
     {
-        //apenas um filho ou sem filhos
+        //Quando o nódulo possui somente um filho ou não tem filhos.
         if (head->left == NULL)
         {
             struct node *temp = head->right;
-            free(temp);
+            free(head);
             return temp;
         }
         else if (head->right == NULL)
         {
             struct node *temp = head->left;
-            free(temp);
+            free(head);
             return temp;
         }
-        //dois filhos
+        //Quando possui dois filhos.
         struct node *temp = searchMinChildValue(head->right);
         head->data = temp->data;
         head->right = removeFromTree(head->right, temp->data);
@@ -787,6 +852,7 @@ struct node *removeFromTree(struct node *head, int target)
     return head;
 }
 
+//Busca o filho com menor valor do nódulo fornecido.
 struct node *searchMinChildValue(struct node *head)
 {
     struct node *current = head;
@@ -795,4 +861,19 @@ struct node *searchMinChildValue(struct node *head)
         current = current->left;
     }
     return current;
+}
+
+//Função para liberar a memória alocada dinamicamente.
+void freeTree(struct node *head)
+{
+    if (head == NULL)
+    {
+        return;
+    }
+    else
+    {
+        freeTree(head->left);
+        freeTree(head->right);
+        free(head);
+    }
 }
