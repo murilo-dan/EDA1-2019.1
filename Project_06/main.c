@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   //Função utilizada para randomização de algumas variáveis.
   srand(time(NULL));
   FILE *fp;
-  const double learningRate = 10, euler = exp(1.0);
+  const double learningRate = .5, euler = exp(1.0);
   double acerto = 0, falsa_rejeicao = 0, falsa_aceitacao = 0;
   int random[25] = {0}, j = 1, aux = 0;
   int test[25] = {0};
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
             n += saidaEntrada[a] * pesosOculta[i + a];
           }
           n += bOculta[k];
-          saidaOculta[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+          saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
           n = 0;
         }
         for (int a = 0; a < input; a++)
@@ -106,33 +106,36 @@ int main(int argc, char *argv[])
           camadaSaida += saidaOculta[a] * pesosSaida[a];
         }
         camadaSaida += bSaida;
-        camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
-        erro[aux] = 0 - camadaSaida;
-
-        //BACK PROPAGATION - errado
-        gradienteSaida = -(pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
+        camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
+        erro[aux] = 0.0 - camadaSaida;
+        
+        //BACK PROPAGATION
+        gradienteSaida = (pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
         double somatorioOculta = 0, somatorioEntrada = 0;
-        for (int i = 0; i < input; i++)
+        for (int k = 0; k < input; k++)
         {
-          somatorioOculta += gradienteSaida * pesosSaida[i];
+          somatorioOculta += gradienteSaida * pesosSaida[k];
+          gradienteOculta[k] = (pow(euler, saidaOculta[k]) / pow(pow(euler, saidaOculta[k]) + 1, 2)) * somatorioOculta;
+          somatorioOculta = 0;
         }
-        for (int i = 0; i < input; i++)
-        {
-          gradienteOculta[i] = -(pow(euler, saidaOculta[i]) / pow(pow(euler, saidaOculta[i]) + 1, 2)) * somatorioOculta;
-        }
-        for (int i = 0, h = 0; i < input; i++)
-        {
-          for (; h < input * 536; h++)
-          {
-            somatorioEntrada += gradienteOculta[i] * pesosOculta[h];
-          }
-        }
+        //ERRO
+        somatorioEntrada = 0;
         for (int i = 0; i < 536; i++)
         {
-          gradienteEntrada[i] = -(pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
+          for (int h = 0, b = i; h < input; h++, b += 536)
+          {
+            printf("%lf\n", somatorioEntrada);
+            printf("%lf ////// %lf\n", gradienteOculta[h], pesosOculta[b]);
+            somatorioEntrada += gradienteOculta[h] + pesosOculta[b];
+            printf("%lf\n", somatorioEntrada);
+          }
+          return 0;
+          gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
+          somatorioEntrada = 0;
         }
         somatorioOculta = 0;
         somatorioEntrada = 0;
+
         for (int i = 0; i < input; i++)
         {
           pesosSaida[i] = pesosSaida[i] + learningRate * saidaOculta[i] * gradienteSaida;
@@ -184,7 +187,7 @@ int main(int argc, char *argv[])
             n += (*(camadaEntrada + a)) * pesosEntrada[i + a];
           }
           n += bEntrada[k];
-          saidaEntrada[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+          saidaEntrada[k] = (1 / (1 + (pow(euler, -n))));
           n = 0.0;
         }
         for (int i = 0, k = 0; i < input * 536; i += 536, k++)
@@ -194,7 +197,7 @@ int main(int argc, char *argv[])
             n += saidaEntrada[a] * pesosOculta[i + a];
           }
           n += bOculta[k];
-          saidaOculta[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+          saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
           n = 0.0;
         }
         for (int a = 0; a < input; a++)
@@ -202,29 +205,25 @@ int main(int argc, char *argv[])
           camadaSaida += saidaOculta[a] * pesosSaida[a];
         }
         camadaSaida += bSaida;
-        camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
-        erro[aux + 25] = 1 - camadaSaida;
+        camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
+        erro[aux + 25] = 1.0 - camadaSaida;
 
-        //BACK PROPAGATION - errado
-        gradienteSaida = -(pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
-        for (int i = 0; i < input; i++)
+        //BACK PROPAGATION
+        gradienteSaida = (pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
+        for (int k = 0; k < input; k++)
         {
-          somatorioOculta += gradienteSaida * pesosSaida[i];
-        }
-        for (int i = 0; i < input; i++)
-        {
-          gradienteOculta[i] = -(pow(euler, saidaOculta[i]) / pow(pow(euler, saidaOculta[i]) + 1, 2)) * somatorioOculta;
-        }
-        for (int i = 0, h = 0; i < input; i++)
-        {
-          for (; h < input * 536; h++)
-          {
-            somatorioEntrada += gradienteOculta[i] * pesosOculta[h];
-          }
+          somatorioOculta += gradienteSaida * pesosSaida[k];
+          gradienteOculta[k] = (pow(euler, saidaOculta[k]) / pow(pow(euler, saidaOculta[k]) + 1, 2)) * somatorioOculta;
+          somatorioOculta = 0;
         }
         for (int i = 0; i < 536; i++)
         {
-          gradienteEntrada[i] = -(pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
+          for (int h = 0, b = i; h < input; h++, b += 536)
+          {
+            somatorioEntrada += gradienteOculta[h] + pesosOculta[b];
+          }
+          gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
+          somatorioEntrada = 0;
         }
         somatorioOculta = 0;
         somatorioEntrada = 0;
@@ -279,10 +278,9 @@ int main(int argc, char *argv[])
     j = 1;
     for (int z = 0; z < 50; z++)
     {
-      minSquareError += pow(erro[z], 2);
+      minSquareError += erro[z];
     }
     minSquareError = minSquareError / 50;
-    printf("%d\n", epoca);
   }
   j = 1;
   for (aux = 0; aux < 25;)
@@ -370,7 +368,6 @@ int main(int argc, char *argv[])
       }
       camadaSaida += bSaida;
       camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
-      printf("%lf\n", camadaSaida);
       if (camadaSaida > 0.5)
       {
         acerto++;
