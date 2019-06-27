@@ -15,6 +15,7 @@ Gabriel Alves Hussein - 17/0103200
 double *shufflePesos(double *, int, int);
 double *shuffleBias(double *, int);
 int *shuffleTraining(int *);
+void debug();
 //Declaração do protótipo das funções utilizadas.
 
 //Início da função principal.
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
   double minSquareError = 0;
   double erro[50] = {0};
   double gradienteEntrada[536], gradienteOculta[input], gradienteSaida = 0;
-  double learningRate;
+  const double learningRate = 0.5;
   int random[25] = {0};
   double bEntrada[536], bOculta[input], bSaida;
   double pesosEntrada[287296], pesosOculta[input * 536], pesosSaida[input];
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
   fp = fopen("features.txt", "r");
   int j = 0, aux = 0;
   double saidaEntrada[536], saidaOculta[input], camadaSaida = 0, n, euler = 2.718281828459045235360287;
-  for (int época = 0; época < 1000 || minSquareError <= 0.2; época++)
+  for (int epoca = 0; epoca < 1000 || minSquareError <= 0.2; epoca++)
   {
     while (aux < 25)
     {
@@ -90,37 +91,61 @@ int main(int argc, char *argv[])
         camadaSaida += bSaida;
         camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
         erro[aux] = 0 - camadaSaida;
-        free(camadaEntrada);
-        //   for(int i=0; i<536; i++)
-        //   {
-        //     gradienteEntrada[i];
-        //   }
-        //   for(int i=0; i<input;i++)
-        //   {
-        //     gradienteOculta[i];
-        //   }
-        //   gradienteSaida = /*derivada de*/ camadaSaida * erro;
-        //   for(int i=0; i<536; i++)
-        //   {
-        //     for(int j=0; j<536; j++)
-        //     {
-        //       pesosEntrada[j+i] = (pesosEntrada[j+i] + learningRate) * camadaSaida * *gradienteEntrada;
-        //     }
-        //     bEntrada[i] = (bEntrada[i] + learningRate) * *gradienteEntrada;
-        //   }
-        //   for(int i=0; i<input; i++)
-        //   {
-        //     for(int j=0; j<input; j++)
-        //     {
-        //       pesosOculta[j+i] = (pesosOculta[j+i] + learningRate) * saidaAsphalt[j] * *gradienteOculta;
-        //     }
-        //     bOculta[i] = (bOculta[i] + learningRate) * *gradienteOculta;
-        //   }
-        //   for(int i=0; i<input; i++)
-        //   {
-        //     pesosSaida[i] = (pesosSaida[i] + learningRate) * saidaAsphaltOculta[j] * gradienteSaida;
-        //     bSaida = (bSaida + learningRate) * gradienteSaida;
-        //   }
+
+        //BACK PROPAGATION
+        gradienteSaida = (pow(euler, camadaSaida) / pow((pow(euler, camadaSaida) + 1), 2)) * erro[aux];
+        double somatorioOculta = 0, somatorioEntrada = 0;
+        for (int i = 0; i < input; i++)
+        {
+          somatorioOculta += gradienteSaida * pesosSaida[i];
+        }
+        for (int i = 0; i < input; i++)
+        {
+          gradienteOculta[i] = (pow(euler, saidaOculta[i]) / pow((pow(euler, saidaOculta[i]) + 1), 2)) * somatorioOculta;
+        }
+        for (int i = 0, h = 0; i < input; i++)
+        {
+          for (; h < input * 536; h++)
+          {
+            somatorioEntrada += gradienteOculta[i] * pesosOculta[h];
+          }
+        }
+        for (int i = 0; i < 536; i++)
+        {
+          gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow((pow(euler, saidaEntrada[i]) + 1), 2)) * somatorioEntrada;
+        }
+        somatorioOculta = 0;
+        somatorioEntrada = 0;
+        for (int i = 0; i < input; i++)
+        {
+          pesosSaida[i] = pesosSaida[i] + learningRate * saidaOculta[i] * gradienteSaida;
+        }
+        bSaida = bSaida + learningRate * gradienteSaida;
+
+        for (int i = 0, g = 0; i < input * 536; i += 536, g++)
+        {
+          for (int h = 0; h < 536; h++)
+          {
+            pesosOculta[i + h] = pesosOculta[i + h] + learningRate * saidaEntrada[h] * gradienteOculta[g];
+          }
+        }
+        for (int i = 0; i < input; i++)
+        {
+          bOculta[i] = bOculta[i] + learningRate * gradienteOculta[i];
+        }
+
+        for (int i = 0, g = 0; i < 287296; i += 536, g++)
+        {
+          for (int h = 0; h < 536; h++)
+          {
+            pesosEntrada[i + h] = pesosEntrada[i + h] + learningRate * camadaEntrada[h] * gradienteEntrada[g];
+          }
+        }
+        for (int i = 0; i < 536; i++)
+        {
+          bEntrada[i] = bEntrada[i] + learningRate * gradienteEntrada[i];
+        }
+
         for (int i = 0; i < 50; i++)
         {
           double *temp = calloc(536, sizeof(double));
@@ -130,7 +155,6 @@ int main(int argc, char *argv[])
           }
           free(temp);
         }
-        double *camadaEntrada = calloc(536, sizeof(double));
         for (int a = 0; a < 536; a++)
         {
           fscanf(fp, "%lf", &*(camadaEntrada + a));
@@ -162,8 +186,60 @@ int main(int argc, char *argv[])
         camadaSaida += bSaida;
         camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
         erro[aux + 25] = 1 - camadaSaida;
+
+        //BACK PROPAGATION
+        gradienteSaida = (pow(euler, camadaSaida) / pow((pow(euler, camadaSaida) + 1), 2)) * erro[aux + 25];
+        for (int i = 0; i < input; i++)
+        {
+          somatorioOculta += gradienteSaida * pesosSaida[i];
+        }
+        for (int i = 0; i < input; i++)
+        {
+          gradienteOculta[i] = (pow(euler, saidaOculta[i]) / pow((pow(euler, saidaOculta[i]) + 1), 2)) * somatorioOculta;
+        }
+        for (int i = 0, h = 0; i < input; i++)
+        {
+          for (; h < input * 536; h++)
+          {
+            somatorioEntrada += gradienteOculta[i] * pesosOculta[h];
+          }
+        }
+        for (int i = 0; i < 536; i++)
+        {
+          gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow((pow(euler, saidaEntrada[i]) + 1), 2)) * somatorioEntrada;
+        }
+        somatorioOculta = 0;
+        somatorioEntrada = 0;
+        for (int i = 0; i < input; i++)
+        {
+          pesosSaida[i] = pesosSaida[i] + learningRate * saidaOculta[i] * gradienteSaida;
+        }
+        bSaida = bSaida + learningRate * gradienteSaida;
+
+        for (int i = 0, g = 0; i < input * 536; i += 536, g++)
+        {
+          for (int h = 0; h < 536; h++)
+          {
+            pesosOculta[i + h] = pesosOculta[i + h] + learningRate * saidaEntrada[h] * gradienteOculta[g];
+          }
+        }
+        for (int i = 0; i < input; i++)
+        {
+          bOculta[i] = bOculta[i] + learningRate * gradienteOculta[i];
+        }
+
+        for (int i = 0, g = 0; i < 287296; i += 536, g++)
+        {
+          for (int h = 0; h < 536; h++)
+          {
+            pesosEntrada[i + h] = pesosEntrada[i + h] + learningRate * camadaEntrada[h] * gradienteEntrada[g];
+          }
+        }
+        for (int i = 0; i < 536; i++)
+        {
+          bEntrada[i] = bEntrada[i] + learningRate * gradienteEntrada[i];
+        }
         free(camadaEntrada);
-        //back propagation grama
         rewind(fp);
         j = 0;
         aux++;
@@ -187,7 +263,7 @@ int main(int argc, char *argv[])
       minSquareError += erro[z];
     }
     minSquareError *= minSquareError;
-    minSquareError /= 25;
+    minSquareError /= 50;
   }
   fclose(fp);
   return 0;
@@ -225,4 +301,10 @@ int *shuffleTraining(int *vetor)
     vetor[randomIndex] = temp;
   }
   return vetor;
+}
+
+void debug()
+{
+  printf("TESTE\n");
+  return;
 }
