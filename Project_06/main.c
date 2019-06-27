@@ -12,7 +12,7 @@ Gabriel Alves Hussein - 17/0103200
 #include <math.h>
 #include <stdbool.h>
 
-double *shufflePesos(double *, int, int);
+double *shufflePesos(double *, int);
 double *shuffleBias(double *, int);
 int *shuffleTraining(int *);
 void debug();
@@ -26,20 +26,29 @@ int main(int argc, char *argv[])
   //Função utilizada para randomização de algumas variáveis.
   srand(time(NULL));
   FILE *fp;
+  const double learningRate = 50, euler = exp(1.0);
+  int random[25] = {0}, j = 1, aux = 0;
   double minSquareError = 0;
   double erro[50] = {0};
   double gradienteEntrada[536], gradienteOculta[input], gradienteSaida = 0;
-  const double learningRate = 0.5;
-  int random[25] = {0};
   double bEntrada[536], bOculta[input], bSaida;
-  double pesosEntrada[287296], pesosOculta[input * 536], pesosSaida[input];
+  double pesosEntrada[536 * 536], pesosOculta[input * 536], pesosSaida[input];
+  double saidaEntrada[536], saidaOculta[input], camadaSaida = 0;
+  double n;
   shuffleTraining(random);
-  fp = fopen("features.txt", "r");
-  int j = 0, aux = 0;
-  double saidaEntrada[536], saidaOculta[input], camadaSaida = 0, n, euler = 2.718281828459045235360287;
-  for (int epoca = 0; epoca < 1000 || minSquareError <= 0.2; epoca++)
+  shuffleBias(bEntrada, 536);
+  shufflePesos(pesosEntrada, 536 * 536);
+  shuffleBias(bOculta, input);
+  shufflePesos(pesosOculta, input * 536);
+  for (int i = 0; i < input; i++)
   {
-    while (aux < 25)
+    pesosSaida[i] = rand() % 15000;
+  }
+  bSaida = rand() % 15000;
+  fp = fopen("features.txt", "r");
+  for (int epoca = 0; epoca < 1000 || minSquareError >= 0.2; epoca++)
+  {
+    for (aux = 0; aux < 25;)
     {
       if (j == random[aux])
       {
@@ -48,48 +57,32 @@ int main(int argc, char *argv[])
         {
           fscanf(fp, "%lf", &*(camadaEntrada + a));
         }
-        if (aux == 0)
-          shuffleBias(bEntrada, 536);
-        for (int i = 0, k = 0; i < 287296; i += 536, k++)
+        for (int i = 0, k = 0; i < (536 * 536); i += 536, k++)
         {
-          if (aux == 0)
-            shufflePesos(pesosEntrada, i, 536);
           for (int a = 0; a < 536; a++)
           {
-            n += *(camadaEntrada + a) * pesosEntrada[i + a];
+            n += (*(camadaEntrada + a)) * pesosEntrada[i + a];
           }
           n += bEntrada[k];
-          saidaEntrada[k] = (1 / (1 + (pow(euler, -n))));
-          n = 0;
+          saidaEntrada[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+          n = 0.0;
         }
-        if (aux == 0)
-          shuffleBias(bOculta, input);
         for (int i = 0, k = 0; i < input * 536; i += 536, k++)
         {
-          if (aux == 0)
-            shufflePesos(pesosOculta, i, 536);
           for (int a = 0; a < 536; a++)
           {
             n += saidaEntrada[a] * pesosOculta[i + a];
           }
           n += bOculta[k];
-          saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
+          saidaOculta[k] = (1 / (1 + (pow(euler, (n * (-1))))));
           n = 0;
-        }
-        if (aux == 0)
-        {
-          for (int i = 0; i < input; i++)
-          {
-            pesosSaida[i] = rand() % 15000;
-          }
-          bSaida = rand() % 15000;
         }
         for (int a = 0; a < input; a++)
         {
           camadaSaida += saidaOculta[a] * pesosSaida[a];
         }
         camadaSaida += bSaida;
-        camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
+        camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
         erro[aux] = 0 - camadaSaida;
 
         //BACK PROPAGATION
@@ -146,7 +139,7 @@ int main(int argc, char *argv[])
           bEntrada[i] = bEntrada[i] + learningRate * gradienteEntrada[i];
         }
 
-        for (int i = 0; i < 50; i++)
+        for (int i = 1; i < 50; i++)
         {
           double *temp = calloc(536, sizeof(double));
           for (int a = 0; a < 536; a++)
@@ -159,6 +152,7 @@ int main(int argc, char *argv[])
         {
           fscanf(fp, "%lf", &*(camadaEntrada + a));
         }
+        return 0;
         for (int i = 0, k = 0; i < 287296; i += 536, k++)
         {
           for (int a = 0; a < 536; a++)
@@ -232,7 +226,7 @@ int main(int argc, char *argv[])
         {
           for (int h = 0; h < 536; h++)
           {
-            pesosEntrada[i + h] = pesosEntrada[i + h] + learningRate * camadaEntrada[h] * gradienteEntrada[g];
+            pesosEntrada[i + h] = pesosEntrada[i + h] + learningRate * (*(camadaEntrada + h)) * gradienteEntrada[g];
           }
         }
         for (int i = 0; i < 536; i++)
@@ -241,8 +235,8 @@ int main(int argc, char *argv[])
         }
         free(camadaEntrada);
         rewind(fp);
-        j = 0;
         aux++;
+        j = 1;
       }
       else
       {
@@ -256,24 +250,27 @@ int main(int argc, char *argv[])
       }
     }
     aux = 0;
-    j = 0;
+    j = 1;
     shuffleTraining(random);
     for (int z = 0; z < 50; z++)
     {
+      //printf("%lf\n", erro[z]);
       minSquareError += erro[z];
     }
+    //printf("\n\n\n\n\n\n\n");
     minSquareError *= minSquareError;
     minSquareError /= 50;
+    //printf("%lf\n", minSquareError);
   }
   fclose(fp);
   return 0;
 }
 
-double *shufflePesos(double *pesos, int current, int limit)
+double *shufflePesos(double *pesos, int limit)
 {
   for (int i = 0; i < limit; i++)
   {
-    pesos[current + i] = rand() % 15000;
+    pesos[i] = rand() % 15000;
   }
   return pesos;
 }
