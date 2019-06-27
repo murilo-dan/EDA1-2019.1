@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   double acerto = 0, falsa_rejeicao = 0, falsa_aceitacao = 0;
   int random[25] = {0}, j = 1, aux = 0;
   int test[25] = {0};
-  double minSquareError = 0;
+  double minSquareError = 1;
   double erro[50] = {0};
   double gradienteEntrada[536], gradienteOculta[input], gradienteSaida = 0;
   double bEntrada[536], bOculta[input], bSaida;
@@ -67,15 +67,17 @@ int main(int argc, char *argv[])
   }
   bSaida = rand() / (double)RAND_MAX;
   fp = fopen("features.txt", "r");
-  for (int epoca = 0; epoca < 1000 || minSquareError > 0.2; epoca++)
+  for (int epoca = 0;; epoca++)
   {
-    n = 0;
+    if (minSquareError <= 0.2 || epoca > 1000)
+    {
+      break;
+    }
     for (aux = 0; aux < 25;)
     {
-      n = 0;
       if (j == random[aux])
       {
-        n = 0;
+        n = 0.0;
         double *camadaEntrada = calloc(536, sizeof(double));
         for (int a = 0; a < 536; a++)
         {
@@ -88,7 +90,7 @@ int main(int argc, char *argv[])
             n += (*(camadaEntrada + a)) * pesosEntrada[i + a];
           }
           n += bEntrada[k];
-          saidaEntrada[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+          saidaEntrada[k] = (1 / (1 + (pow(euler, -n))));
           n = 0.0;
         }
         for (int i = 0, k = 0; i < input * 536; i += 536, k++)
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
         camadaSaida += bSaida;
         camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
         erro[aux] = 0.0 - camadaSaida;
-        
+
         //BACK PROPAGATION
         gradienteSaida = (pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
         double somatorioOculta = 0, somatorioEntrada = 0;
@@ -118,18 +120,13 @@ int main(int argc, char *argv[])
           gradienteOculta[k] = (pow(euler, saidaOculta[k]) / pow(pow(euler, saidaOculta[k]) + 1, 2)) * somatorioOculta;
           somatorioOculta = 0;
         }
-        //ERRO
         somatorioEntrada = 0;
         for (int i = 0; i < 536; i++)
         {
           for (int h = 0, b = i; h < input; h++, b += 536)
           {
-            printf("%lf\n", somatorioEntrada);
-            printf("%lf ////// %lf\n", gradienteOculta[h], pesosOculta[b]);
-            somatorioEntrada += gradienteOculta[h] + pesosOculta[b];
-            printf("%lf\n", somatorioEntrada);
+            somatorioEntrada += gradienteOculta[h] * pesosOculta[b];
           }
-          return 0;
           gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
           somatorioEntrada = 0;
         }
@@ -198,7 +195,7 @@ int main(int argc, char *argv[])
           }
           n += bOculta[k];
           saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
-          n = 0.0;
+          n = 0;
         }
         for (int a = 0; a < input; a++)
         {
@@ -209,18 +206,19 @@ int main(int argc, char *argv[])
         erro[aux + 25] = 1.0 - camadaSaida;
 
         //BACK PROPAGATION
-        gradienteSaida = (pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux];
+        gradienteSaida = (pow(euler, camadaSaida) / pow(pow(euler, camadaSaida) + 1, 2)) * erro[aux + 25];
         for (int k = 0; k < input; k++)
         {
           somatorioOculta += gradienteSaida * pesosSaida[k];
           gradienteOculta[k] = (pow(euler, saidaOculta[k]) / pow(pow(euler, saidaOculta[k]) + 1, 2)) * somatorioOculta;
           somatorioOculta = 0;
         }
+        somatorioEntrada = 0;
         for (int i = 0; i < 536; i++)
         {
           for (int h = 0, b = i; h < input; h++, b += 536)
           {
-            somatorioEntrada += gradienteOculta[h] + pesosOculta[b];
+            somatorioEntrada += gradienteOculta[h] * pesosOculta[b];
           }
           gradienteEntrada[i] = (pow(euler, saidaEntrada[i]) / pow(pow(euler, saidaEntrada[i]) + 1, 2)) * somatorioEntrada;
           somatorioEntrada = 0;
@@ -278,7 +276,7 @@ int main(int argc, char *argv[])
     j = 1;
     for (int z = 0; z < 50; z++)
     {
-      minSquareError += erro[z];
+      minSquareError += erro[z] * erro[z];
     }
     minSquareError = minSquareError / 50;
   }
@@ -287,7 +285,7 @@ int main(int argc, char *argv[])
   {
     if (j == test[aux])
     {
-      n = 0;
+      n = 0.0;
       double *camadaEntrada = calloc(536, sizeof(double));
       for (int a = 0; a < 536; a++)
       {
@@ -300,7 +298,7 @@ int main(int argc, char *argv[])
           n += (*(camadaEntrada + a)) * pesosEntrada[i + a];
         }
         n += bEntrada[k];
-        saidaEntrada[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+        saidaEntrada[k] = (1 / (1 + (pow(euler, -n))));
         n = 0.0;
       }
       for (int i = 0, k = 0; i < input * 536; i += 536, k++)
@@ -310,7 +308,7 @@ int main(int argc, char *argv[])
           n += saidaEntrada[a] * pesosOculta[i + a];
         }
         n += bOculta[k];
-        saidaOculta[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+        saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
         n = 0;
       }
       for (int a = 0; a < input; a++)
@@ -318,7 +316,7 @@ int main(int argc, char *argv[])
         camadaSaida += saidaOculta[a] * pesosSaida[a];
       }
       camadaSaida += bSaida;
-      camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
+      camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
       if (camadaSaida <= 0.5)
       {
         acerto++;
@@ -349,7 +347,7 @@ int main(int argc, char *argv[])
           n += (*(camadaEntrada + a)) * pesosEntrada[i + a];
         }
         n += bEntrada[k];
-        saidaEntrada[k] = (1 / (1 + (pow(euler, (n * (-1))))));
+        saidaEntrada[k] = (1 / (1 + (pow(euler, -n))));
         n = 0.0;
       }
       for (int i = 0, k = 0; i < input * 536; i += 536, k++)
@@ -359,15 +357,15 @@ int main(int argc, char *argv[])
           n += saidaEntrada[a] * pesosOculta[i + a];
         }
         n += bOculta[k];
-        saidaOculta[k] = (1 / (1 + (pow(euler, (n * (-1))))));
-        n = 0.0;
+        saidaOculta[k] = (1 / (1 + (pow(euler, -n))));
+        n = 0;
       }
       for (int a = 0; a < input; a++)
       {
         camadaSaida += saidaOculta[a] * pesosSaida[a];
       }
       camadaSaida += bSaida;
-      camadaSaida = (1 / (1 + (pow(euler, (camadaSaida * (-1))))));
+      camadaSaida = (1 / (1 + (pow(euler, -camadaSaida))));
       if (camadaSaida > 0.5)
       {
         acerto++;
@@ -433,10 +431,4 @@ int *shuffleTraining(int *vetor)
     vetor[randomIndex] = temp;
   }
   return vetor;
-}
-
-void debug()
-{
-  printf("TESTE\n");
-  return;
 }
