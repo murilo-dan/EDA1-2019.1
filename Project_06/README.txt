@@ -31,3 +31,6 @@ Todos os vetores estão normalizados.
 Na linha 21 do código há uma variável booleana com o nome "flow", inicialmente setada para false.
 Setar a variável para true fará com que o código imprima no terminal a época atual e cada erro médio quadrático calculado,
 além de informar qual parte do programa está sendo executada (treinamento ou teste).
+
+O erro médio quadrático calculado pode permanecer constante por determinado tempo enquanto o sistema tenta balancear os pesos
+e os bias. Esse tempo depende do número de neurônios escolhido para a Camada Oculta.
